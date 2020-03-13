@@ -18,6 +18,18 @@ class DeviceType(IntEnum):
     TV = 3
     OTHER = 4
 
+    def __str__(self) -> str:
+        """Gets a human-readable string of the enum"""
+        return self.name
+
+    @staticmethod
+    def from_string(s: str):
+        """Gets an enum value from a string"""
+        try:
+            return DeviceType[s]
+        except KeyError as e:
+            raise ValueError from e
+
 class RepeatStatus(IntEnum):
     """
     Defines the available repeat status
@@ -25,6 +37,18 @@ class RepeatStatus(IntEnum):
     OFF = 0         # Repeat is currently not enabled.
     SINGLE = 1      # Repeat one track only.
     ALL = 2         # Repeat all songs in the playlist or album.
+
+    def __str__(self):
+        """Gets a human-readable string of the enum"""
+        return self.name
+
+    @staticmethod
+    def from_string(s: str):
+        """Gets an enum value from a string"""
+        try:
+            return RepeatStatus[s]
+        except KeyError as e:
+            raise ValueError from e
 
 @dataclass
 class PainterOptions:

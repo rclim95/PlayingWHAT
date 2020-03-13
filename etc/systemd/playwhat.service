@@ -1,0 +1,19 @@
+[Unit]
+Description=PlayWHAT Daemon
+After=network.target
+
+[Service]
+Type=forking
+User=richard
+Group=richard
+PIDFile=/run/playwhat/playwhat.pid
+ExecStart=/opt/PlayingWHAT/src/.venv/bin/python3 -m playwhat.daemon start
+ExecStop=/opt/PlayingWHAT/src/.venv/bin/python3 -m playwhat.daemon stop
+Restart=on-failure
+WorkingDirectory=/opt/PlayingWHAT/src
+ConfigurationDirectory=playwhat
+RuntimeDirectory=playwhat
+LogsDirectory=playwhat
+
+[Install]
+WantedBy=multi-user.target

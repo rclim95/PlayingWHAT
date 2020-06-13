@@ -6,6 +6,7 @@ import os
 import sys
 import dotenv
 import spotipy
+import playwhat
 
 def authenticate(args):
     """Authenticate with the Spotify API"""
@@ -28,17 +29,17 @@ def authenticate(args):
     # TODO: Extract this to a constant.
     logger.info("Prompting user for authentication...")
     scopes = ["user-read-recently-played", "user-read-playback-state"]
-    cache_path = os.getenv("SPOTIFY_CREDENTIAL_CACHE_PATH")
+    cache_path = os.getenv(playwhat.ENV_CREDENTIAL_CACHE_PATH)
     token = spotipy.util.prompt_for_user_token(args.username,
                                                scope=" ".join(scopes),
-                                               client_id=os.getenv("SPOTIFY_CLIENT_ID"),
-                                               client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
-                                               redirect_uri=os.getenv("SPOTIFY_REDIRECT_URL"),
+                                               client_id=os.getenv(playwhat.ENV_CLIENT_ID),
+                                               client_secret=os.getenv(playwhat.ENV_CLIENT_SECRET),
+                                               redirect_uri=os.getenv(playwhat.ENV_REDIRECT_URL),
                                                cache_path=cache_path,
                                                show_dialog=False)
 
     # Save the user token for future reference
-    dotenv.set_key(dotenv_path, "SPOTIFY_USER_TOKEN", token)
+    dotenv.set_key(dotenv_path, playwhat.ENV_USER_TOKEN, token)
     logger.info("User token saved to .env file, restart the service for your changes to take effect.")
 
 def create_argparser() -> ArgumentParser:
@@ -77,8 +78,8 @@ def main():
         logger.info("Loading .env file from %s", args.dotenv)
         dotenv.load_dotenv(args.dotenv)
 
-    logger.debug("SPOTIFY_CLIENT_ID = %s", os.getenv("SPOTIFY_CLIENT_ID"))
-    logger.debug("SPOTIFY_CLIENT_SECRET = %s", "*" * len(os.getenv("SPOTIFY_CLIENT_SECRET")))
+    logger.debug("SPOTIFY_CLIENT_ID = %s", os.getenv(playwhat.ENV_CLIENT_ID))
+    logger.debug("SPOTIFY_CLIENT_SECRET = %s", "*" * len(os.getenv(playwhat.ENV_CLIENT_SECRET)))
 
     # Run the action the user as speciifed
     args.func(args)

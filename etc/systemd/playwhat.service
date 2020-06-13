@@ -13,6 +13,7 @@ WorkingDirectory=/opt/PlayingWHAT/src
 ConfigurationDirectory=playwhat
 RuntimeDirectory=playwhat
 LogsDirectory=playwhat
+Environment=ENV_FILE=/opt/PlayingWHAT/src/.env
 
 [Install]
 WantedBy=multi-user.target

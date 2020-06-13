@@ -1,18 +1,18 @@
-"""Responsible for starting the `playwhat.daemon` server"""
+"""Responsible for starting the `playwhat.service` server"""
 
 import asyncio
 import json
 import os
 import signal
-from playwhat.daemon import LOGGER
-from playwhat.daemon.constants import PATH_PID, PATH_UNIX_SOCKET
-import playwhat.daemon.messages as messages
+from playwhat.service import LOGGER
+from playwhat.service.constants import PATH_PID, PATH_UNIX_SOCKET
+import playwhat.service.messages as messages
 from playwhat.painter import display
 
 _SERVER: asyncio.AbstractServer = None
 
 async def on_client_connected(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-    """Called when a client has conneced to the daemon server"""
+    """Called when a client has connected to the daemon server"""
     LOGGER.info("Client connected")
 
     handler = messages.DefaultHandler
@@ -30,21 +30,11 @@ async def on_client_connected(reader: asyncio.StreamReader, writer: asyncio.Stre
     await handler.write(writer, messages.ResponseMessage(succeeded=True))
     writer.close()
 
-def on_sigterm(signum, frame):
-    """Called when the OS sends a `SIGTERM` signal"""
-    # pylint: disable=unused-argument
-    if _SERVER is not None:
-        loop = _SERVER.get_loop()
-        loop.call_soon_threadsafe(_SERVER.close)
-
 async def start():
     """Start the service"""
     # pylint: disable=global-statement
     global _SERVER
     LOGGER.info("Daemon started successfully")
-
-    # Register so that we properly handle the SIGTERM
-    signal.signal(signal.SIGTERM, on_sigterm)
 
     # Start the server
     try:
@@ -56,6 +46,7 @@ async def start():
     except asyncio.CancelledError:
         LOGGER.info("Unix socket stopped successfully")
 
-    # Delete the PID file since we've terminated
-    LOGGER.info("Terminating daemon...")
-    os.remove(PATH_PID)
+def stop():
+    if _SERVER is not None:
+        loop = _SERVER.get_loop()
+        loop.call_soon_threadsafe(_SERVER.close)

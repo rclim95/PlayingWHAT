@@ -1,4 +1,4 @@
-"""Provide utility functions for the `playwhat.daemon` module"""
+"""Provide utility functions for the `playwhat.service` module"""
 
 from asyncio import StreamReader, StreamWriter
 from datetime import timedelta
@@ -10,7 +10,7 @@ import warnings
 LOGGER = logging.getLogger(__package__)
 
 class CustomJsonEncoder(JSONEncoder):
-    """Provides a custom JSON encoder for the `playwhat.daemon`"""
+    """Provides a custom JSON encoder for the `playwhat.service`"""
 
     def default(self, o):
         """Converts `obj` into something JSON serializable"""

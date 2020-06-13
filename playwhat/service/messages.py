@@ -1,7 +1,7 @@
-"""Include messages that can be sent to the `playwhat.daemon` server"""
+"""Include messages that can be sent to the `playwhat.service` server"""
 
 from datetime import timedelta
-from playwhat.daemon.utils import StreamMessageHandler
+from playwhat.service.utils import StreamMessageHandler
 from playwhat.painter.types import PainterOptions
 
 ID_RESPONSE = 0

@@ -1,4 +1,4 @@
-"""Define constants needed by `playwhat.daemon`"""
+"""Define constants needed by `playwhat.service`"""
 
 import os
 

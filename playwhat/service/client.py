@@ -1,16 +1,16 @@
-"""Responsible for providing a client that connects to the `playwhat.daemon` client"""
+"""Responsible for providing a client that connects to the `playwhat.service` client"""
 
 import asyncio
 import dataclasses
 import json
-from playwhat.daemon import LOGGER
-from playwhat.daemon.constants import PATH_UNIX_SOCKET
-from playwhat.daemon.messages import UpdateDisplayMessage, ResponseMessage, DefaultHandler
-from playwhat.daemon.utils import StreamMessageHandler
+from playwhat.service import LOGGER
+from playwhat.service.constants import PATH_UNIX_SOCKET
+from playwhat.service.messages import UpdateDisplayMessage, ResponseMessage, DefaultHandler
+from playwhat.service.utils import StreamMessageHandler
 from playwhat.painter.types import PainterOptions
 
 async def send_display_update(options: PainterOptions):
-    """Sends a message to the `playwhat.daemon` server for updating the display"""
+    """Sends a message to the `playwhat.service` server for updating the display"""
     LOGGER.info("Updating the InkyWHAT display")
     LOGGER.debug("Updating display = %s", dataclasses.asdict(options))
 

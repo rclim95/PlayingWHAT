@@ -3,6 +3,7 @@ import logging
 import os
 from inky import InkyWHAT
 from PIL import Image, ImageDraw, ImageFont
+import playwhat
 from playwhat.painter.types import PainterOptions, DeviceType, RepeatStatus
 from playwhat.painter.paint import paint
 
@@ -24,10 +25,9 @@ def display(options: PainterOptions) -> Image.Image:
     else:
         _current_options = options
 
-    # The display is up-side down, so rotate it. :)
-    # TODO: Make this a config option.
+    image_rotate_degrees = os.getenv(playwhat.ENV_ROTATE_IMAGE, "0")
     image = paint(options)
-    image = image.rotate(180)
+    image = image.rotate(int(image_rotate_degrees))
 
     inky_display = InkyWHAT("red")
     inky_display.set_border(InkyWHAT.WHITE)

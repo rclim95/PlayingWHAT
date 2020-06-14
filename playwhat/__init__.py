@@ -1,3 +1,5 @@
+"""The playwhat module"""
+
 # Define the available environment variables keys that should exist in the .env file
 ENV_CLIENT_ID = "SPOTIFY_CLIENT_ID"
 ENV_CLIENT_SECRET = "SPOTIFY_CLIENT_SECRET"

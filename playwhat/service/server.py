@@ -2,10 +2,11 @@
 
 import asyncio
 import json
+import time
 from playwhat.service import LOGGER
 from playwhat.service.constants import PATH_UNIX_SOCKET
 import playwhat.service.messages as messages
-from playwhat.painter import display
+from playwhat.painter import display, PainterOptions
 
 _SERVER: asyncio.AbstractServer = None
 
@@ -13,18 +14,26 @@ async def on_client_connected(reader: asyncio.StreamReader, writer: asyncio.Stre
     """Called when a client has connected to the daemon server"""
     LOGGER.info("Client connected")
 
+    # Record the current time so we can measure how long it took to process the request
+    start_time = time.time()
+
     handler = messages.DefaultHandler
     request = await handler.read(reader)
     if request is None:
         LOGGER.debug("Got unexpected message, ignoring")
     elif isinstance(request, messages.UpdateDisplayMessage):
-        LOGGER.info("Updating the InkyWHAT display (this will take a few seconds)")
-        LOGGER.debug("Updating display with parameters: %s", json.dumps(request.to_json()))
+        # Check to see if the message we're updating
+        LOGGER.info("Received UpdateDisplayMesasge with parameters: %s",
+                    json.dumps(request.to_json()))
         options = request.to_painter_options()
+
+        # Should we update?
+        LOGGER.info("Updating InkyWHAT screen...")
         display(options)
 
     # We're done
-    LOGGER.info("Request handled successfully")
+    end_time = time.time()
+    LOGGER.info("Request handled successfully (took %0.0f seconds)", round(end_time - start_time))
     await handler.write(writer, messages.ResponseMessage(succeeded=True))
     writer.close()
 

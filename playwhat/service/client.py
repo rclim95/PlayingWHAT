@@ -2,11 +2,9 @@
 
 import asyncio
 import dataclasses
-import json
 from playwhat.service import LOGGER
 from playwhat.service.constants import PATH_UNIX_SOCKET
 from playwhat.service.messages import UpdateDisplayMessage, ResponseMessage, DefaultHandler
-from playwhat.service.utils import StreamMessageHandler
 from playwhat.painter.types import PainterOptions
 
 async def send_display_update(options: PainterOptions):

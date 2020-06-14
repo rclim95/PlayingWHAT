@@ -4,15 +4,13 @@ from asyncio import StreamReader, StreamWriter
 from datetime import timedelta
 import json
 from json import JSONEncoder, JSONDecodeError
-import logging
 import warnings
-
-LOGGER = logging.getLogger(__package__)
+from playwhat.service import LOGGER
 
 class CustomJsonEncoder(JSONEncoder):
     """Provides a custom JSON encoder for the `playwhat.service`"""
 
-    def default(self, o):
+    def default(self, o): # pylint: disable=method-hidden
         """Converts `obj` into something JSON serializable"""
         if isinstance(o, timedelta):
             return o.total_seconds()
@@ -106,7 +104,7 @@ class StreamMessageHandler(MessageHandler):
             # I don't know how to process this message.
             warnings.warn("Unknown JSON message in stream ({})".format(str(error)))
             return None
-    
+
     async def write(self, writer: StreamWriter, message):
         """Writes a message to a `StreamWriter`"""
         # The message should have a message ID

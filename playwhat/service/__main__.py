@@ -9,16 +9,19 @@ import daemon
 import dotenv
 from daemon.pidfile import PIDLockFile
 import playwhat
-from playwhat.service import LOGGER, server, client
+from playwhat.service import LOGGER, server
 from playwhat.service.constants import PATH_PID
 from playwhat.painter.types import DeviceType, RepeatStatus, PainterOptions
 
-def on_sigterm(signum, frame):
+def on_sigterm(signum, frame): # pylint: disable=unused-argument
     """Handles `SIGTERM` from the service"""
     server.stop()
 
-def on_sighup(signum, frame):
-    """Handles the `SIGHUP` from the service, which indicates the user wants to reload the service's configuration"""
+def on_sighup(signum, frame): # pylint: disable=unused-argument
+    """
+    Handles the `SIGHUP` from the service, which indicates the user wants to reload the service's 
+    configuration
+    """
     # Determine if there's an environment variable called ENV_FILE. If so, we'll load the
     # .env file specified in the ENV_FILE path
     env_file_path = os.getenv("ENV_FILE", None)

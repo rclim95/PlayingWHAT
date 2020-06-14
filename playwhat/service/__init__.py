@@ -1,3 +1,5 @@
 """Initializes the `playwhat.service` module"""
 
-from playwhat.service.utils import LOGGER
+import logging
+
+LOGGER = logging.getLogger(__package__)

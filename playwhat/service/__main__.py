@@ -11,7 +11,6 @@ from daemon.pidfile import PIDLockFile
 import playwhat
 from playwhat.service import LOGGER, server
 from playwhat.service.constants import PATH_PID
-from playwhat.painter.types import DeviceType, RepeatStatus, PainterOptions
 
 def on_sigterm(signum, frame): # pylint: disable=unused-argument
     """Handles `SIGTERM` from the service"""

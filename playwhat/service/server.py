@@ -2,10 +2,8 @@
 
 import asyncio
 import json
-import os
-import signal
 from playwhat.service import LOGGER
-from playwhat.service.constants import PATH_PID, PATH_UNIX_SOCKET
+from playwhat.service.constants import PATH_UNIX_SOCKET
 import playwhat.service.messages as messages
 from playwhat.painter import display
 
@@ -47,6 +45,7 @@ async def start():
         LOGGER.info("Unix socket stopped successfully")
 
 def stop():
+    """Stops the server"""
     if _SERVER is not None:
         loop = _SERVER.get_loop()
         loop.call_soon_threadsafe(_SERVER.close)

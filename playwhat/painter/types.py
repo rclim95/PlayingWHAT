@@ -23,12 +23,26 @@ class DeviceType(IntEnum):
         return self.name
 
     @staticmethod
-    def from_string(s: str):
+    def from_string(string: str):
         """Gets an enum value from a string"""
         try:
-            return DeviceType[s]
-        except KeyError as e:
-            raise ValueError from e
+            return DeviceType[string]
+        except KeyError as error:
+            raise ValueError from error
+
+    @staticmethod
+    def from_api(string: str):
+        """Gets an enum value from a string that was returned from Spotify's API"""
+        if string == "Computer":
+            return DeviceType.COMPUTER
+        elif string == "Smartphone":
+            return DeviceType.PHONE
+        elif string == "TV":
+            return DeviceType.TV
+        elif string == "Speaker":
+            return DeviceType.SPEAKER
+        else:
+            return DeviceType.OTHER
 
 class RepeatStatus(IntEnum):
     """
@@ -43,12 +57,22 @@ class RepeatStatus(IntEnum):
         return self.name
 
     @staticmethod
-    def from_string(s: str):
+    def from_string(string: str):
         """Gets an enum value from a string"""
         try:
-            return RepeatStatus[s]
-        except KeyError as e:
-            raise ValueError from e
+            return RepeatStatus[string]
+        except KeyError as error:
+            raise ValueError from error
+    
+    @staticmethod
+    def from_api(string: str):
+        """Gets an enum value from a string that was returned from Spotify's API"""
+        if string == "track":
+            return RepeatStatus.SINGLE
+        elif string == "context":
+            return RepeatStatus.ALL
+        else:
+            return RepeatStatus.OFF
 
 @dataclass
 class PainterOptions:

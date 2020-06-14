@@ -14,7 +14,7 @@ WorkingDirectory=/opt/PlayingWHAT/src
 ConfigurationDirectory=playwhat
 RuntimeDirectory=playwhat
 LogsDirectory=playwhat
-Environment=ENV_FILE=/opt/PlayingWHAT/.env
+Environment=ENV_FILE=/opt/PlayingWHAT/.env LOG_CONF_FILE=/opt/PlayingWHAT/log_service.yaml
 
 [Install]
 WantedBy=multi-user.target

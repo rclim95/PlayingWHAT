@@ -4,9 +4,7 @@ from argparse import ArgumentParser
 import asyncio
 from datetime import timedelta
 import json
-import logging
 import os
-import sys
 import dotenv
 import spotipy
 import playwhat
@@ -17,16 +15,6 @@ from playwhat.painter.types import DeviceType, RepeatStatus, PainterOptions
 def authenticate(dotenv_path: str, args):
     """Authenticate with the Spotify API"""
     LOGGER.info("Authenticating with the Spotify API...")
-
-    # We're going to be saving the user token into the dotenv file for future reference, so make
-    # sure we can find it first before we go through the authorization process.
-    if dotenv_path is None:
-        try:
-            dotenv_path = dotenv.find_dotenv(raise_error_if_not_found=True)
-        except IOError:
-            LOGGER.exception("Unable to find .ENV file. Please specify the path to the .ENV file "
-                             "by setting an \"ENV_FILE\" environment variable")
-            return
 
     # Prompt the user for their user token so we can observe what they're playing on Spotify
     #
@@ -132,20 +120,10 @@ def main():
     """The main entry point of this script"""
     args = create_argparser()
 
-    # Set up basic logging that prints out to the STDOUT.
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
-                        format="[%(levelname)s] %(asctime)s - %(name)s: %(message)s",
-                        stream=sys.stdout)
+    playwhat.setup_logging(args.verbose, LOGGER)
+    dotenv_path = playwhat.setup_environment_vars(LOGGER)
 
-    # Print out the environment variables being used
-    dotenv_path = os.getenv("ENV_FILE", None)
-    if dotenv_path is None:
-        LOGGER.info("Loading .env file from default location")
-        dotenv.load_dotenv()
-    else:
-        LOGGER.info("Loading .env file from %s", dotenv_path)
-        dotenv.load_dotenv(dotenv_path)
-
+    # Print out some information about the environment variables that has been set
     LOGGER.debug("SPOTIFY_CLIENT_ID = %s", os.getenv(playwhat.ENV_CLIENT_ID))
     LOGGER.debug("SPOTIFY_CLIENT_SECRET = %s", "*" * len(os.getenv(playwhat.ENV_CLIENT_SECRET)))
 

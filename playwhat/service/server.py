@@ -66,14 +66,21 @@ async def run_poller():
         try:
             LOGGER.info("Updating PlayingWHAT with latest playback status from Spotify...")
 
-            # Talk to the Spotify API and see what's the user is playing and who they are
-            oauth_manager = spotipy.SpotifyOAuth(client_id=os.getenv(playwhat.ENV_CLIENT_ID),
-                                                client_secret=os.getenv(playwhat.ENV_CLIENT_SECRET),
-                                                redirect_uri=os.getenv(playwhat.ENV_REDIRECT_URL),
-                                                cache_path=os.getenv(playwhat.ENV_CREDENTIAL_CACHE_PATH),
-                                                scope=" ".join(playwhat.API_SCOPES))
-            api_client = spotipy.Spotify(auth=os.getenv(playwhat.ENV_USER_TOKEN), 
-                                        oauth_manager=oauth_manager)
+            # Setup who we are
+            user_token = os.getenv(playwhat.ENV_USER_TOKEN)
+            oauth_manager = spotipy.SpotifyOAuth(
+                client_id=os.getenv(playwhat.ENV_CLIENT_ID),
+                client_secret=os.getenv(playwhat.ENV_CLIENT_SECRET),
+                redirect_uri=os.getenv(playwhat.ENV_REDIRECT_URL),
+                cache_path=os.getenv(playwhat.ENV_CREDENTIAL_CACHE_PATH),
+                scope=" ".join(playwhat.API_SCOPES)
+            )
+
+            # Communicate with the Spotify API
+            api_client = spotipy.Spotify(
+                auth=user_token,
+                oauth_manager=oauth_manager
+            )
 
             # Now that we know what track the user is playing, build the UpdateDisplayMessage so that
             # we can update the display.
@@ -124,10 +131,17 @@ async def run_poller():
             delay = 0.0
             if current_track["is_playing"]:
                 # Assume the user is going to listen to the whole track, let's check back again
-                # half way from the user's current progress.
+                # a quarter away from the user's current progress.
                 progress_ms = current_track["progress_ms"]
                 duration_ms = track["duration_ms"]
-                delay = ((duration_ms - progress_ms) / 2) / 1000
+                delay = ((duration_ms - progress_ms) / 4) / 1000
+
+                # However, if the calculated delay ends up being a number smaller than 15 seconds,
+                # we'll just use the duration_ms - progress_ms (no need to keep refreshing once we're
+                # at the 15 seconds mark--let's assume the user will be listening to the track all the
+                # way through)
+                if delay <= 15.0:
+                    delay = (duration_ms - progress_ms) / 1000
             else:
                 # Since the user isn't playing anything, we'll check again in a minute.
                 delay = 60.0

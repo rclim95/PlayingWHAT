@@ -14,6 +14,13 @@ handlers:
     level: DEBUG
     formatter: default
     stream: ext://sys.stderr
+loggers:
+  spotipy.client:
+    level: INFO
+  urllib3.connectionpool:
+    level: INFO
+  PIL.PngImagePlugin:
+    level: INFO
 root:
   level: DEBUG
   handlers: [console]

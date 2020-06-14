@@ -102,7 +102,7 @@ async def _on_client_connected(reader: StreamReader, writer: StreamWriter):
 
 async def _do_run_command_server():
     """Runs the command server"""
-    global _server # pylint: disable=invalid-name
+    global _server # pylint: disable=invalid-name,global-statement
 
     LOGGER.info("Starting command server...")
 
@@ -204,7 +204,10 @@ async def _do_run_poller():
                 # we'll listen all the way to the end of said track (cap to a maximum of 15 seconds)
                 delay_sec = remaining.total_seconds() / 4
                 if delay_sec <= 15:
-                    delay_sec = min(remaining.total_seconds(), 15.0)
+                    # Note that we do a max(remaining.total_seconds(), ...) so that if the total
+                    # seconds is 0 seconds, we'll just wait another second (instead of trying to
+                    # poll immediately after by doing delay_sec = 0).
+                    delay_sec = min(max(remaining.total_seconds(), 1), 15.0)
 
             LOGGER.info("Polling again in %0.0f seconds", delay_sec)
             await asyncio.sleep(delay_sec)

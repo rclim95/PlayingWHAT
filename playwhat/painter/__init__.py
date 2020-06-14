@@ -15,7 +15,7 @@ def display(options: PainterOptions) -> Image.Image:
     Takes the image returned by `paint(options: PainterOptions)` and display it on the InkyWHAT
     display
     """
-    global _current_options
+    global _current_options # pylint: disable=invalid-name,global-statement
 
     # Because it takes a long time to update the InkyWHAT, only update it _if_ we really have to
     if _current_options == options:
@@ -48,12 +48,6 @@ def save_screenshot(output_path: str, uid: int):
 
     try:
         screen = paint(_current_options)
-        screen.putpalette((
-            *(255, 255, 255),           # White
-            *(0, 0, 0),                 # Black
-            *(255, 0, 0),               # Red
-            *((0, 0, 0) * 253)          # Remainder
-        ))
         screen.save(output_path, format="PNG")
 
         os.chown(output_path, uid, -1)

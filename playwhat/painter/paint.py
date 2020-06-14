@@ -12,6 +12,12 @@ def paint(options: PainterOptions) -> Image.Image:
     returns a `PIL.Image` that can be shown on the InkyWHAT display
     """
     image = Image.new("P", (InkyWHAT.WIDTH, InkyWHAT.HEIGHT))
+    image.putpalette((
+        *(255, 255, 255),           # White
+        *(0, 0, 0),                 # Black
+        *(255, 0, 0),               # Red
+        *((0, 0, 0) * 253)          # Remainder
+    ))
     draw = ImageDraw.Draw(image)
     _paint_header(image, draw, options)
     _paint_content(image, draw, options)

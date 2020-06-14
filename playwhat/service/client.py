@@ -2,8 +2,7 @@
 
 import asyncio
 import dataclasses
-from playwhat.service import LOGGER
-from playwhat.service.constants import PATH_UNIX_SOCKET
+from playwhat.service import LOGGER, PATH_UNIX_SOCKET
 from playwhat.service.messages import UpdateDisplayMessage, ResponseMessage, DefaultHandler
 from playwhat.painter.types import PainterOptions
 

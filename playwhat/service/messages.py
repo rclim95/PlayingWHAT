@@ -7,7 +7,7 @@ from playwhat.painter.types import PainterOptions
 ID_RESPONSE = 0
 ID_UPDATE_DISPLAY = 1
 
-DefaultHandler = StreamMessageHandler()
+DefaultHandler = StreamMessageHandler() # pylint: disable=invalid-name
 
 @DefaultHandler.register
 class ResponseMessage:
@@ -15,13 +15,16 @@ class ResponseMessage:
     MessageID = ID_RESPONSE
 
     def __init__(self, succeeded: bool):
+        """Constructor"""
         self.succeeded = succeeded
 
     @classmethod
     def from_json(cls, message):
+        """Creates a `ResponseMessage` from the provided JSON"""
         return cls(message["succeeded"])
-    
+
     def to_json(self):
+        """Returns a `ResponseMessage` that can be serialized to JSON"""
         return {
             "succeeded": self.succeeded
         }
@@ -44,6 +47,7 @@ class UpdateDisplayMessage:
                  track_name: str,
                  user_name: str,
                  user_image_url: str):
+        """Constructor"""
         self.artist_name = artist_name
         self.album_name = album_name
         self.album_image_url = album_image_url
@@ -59,6 +63,7 @@ class UpdateDisplayMessage:
 
     @classmethod
     def from_json(cls, message):
+        """Creates an `UpdateDisplayMessage` from the provided JSON"""
         return cls(
             message["artist_name"],
             message["album_name"],
@@ -73,9 +78,10 @@ class UpdateDisplayMessage:
             message["user_name"],
             message["user_image_url"]
         )
-    
+
     @classmethod
     def from_painter_options(cls, opts: PainterOptions):
+        """Creates an `UpdateDisplayMessage` from the provided `PainterOptions`"""
         return cls(
             opts.artist_name,
             opts.album_name,
@@ -92,6 +98,7 @@ class UpdateDisplayMessage:
         )
 
     def to_json(self):
+        """Converts the message to a serializable JSON"""
         return {
             "artist_name": self.artist_name,
             "album_name": self.album_name,
@@ -108,6 +115,7 @@ class UpdateDisplayMessage:
         }
 
     def to_painter_options(self):
+        """Returns the `PainterOptions` that was set for this message"""
         return PainterOptions(
             self.artist_name,
             self.album_name,

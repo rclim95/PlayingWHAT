@@ -1,6 +1,6 @@
 """The main entry point of `playwhat.console`"""
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, FileType, ArgumentTypeError
 import asyncio
 from datetime import timedelta
 import json
@@ -9,7 +9,7 @@ import dotenv
 import spotipy
 import playwhat
 from playwhat.console import LOGGER
-from playwhat.service.client import send_display_update
+from playwhat.service.client import send_display_update, send_screenshot_request
 from playwhat.painter.types import DeviceType, RepeatStatus, PainterOptions
 
 def authenticate(dotenv_path: str, args):
@@ -96,6 +96,13 @@ def refresh(dotenv_path: str, args):
 
     asyncio.run(do_update())
 
+def screenshot(dotenv_path: str, args):
+    """Saves a screenshot of the InkyWHAT display to a file"""
+    async def do_screenshot():
+        await send_screenshot_request(args.output)
+
+    asyncio.run(do_screenshot())
+
 def create_argparser() -> ArgumentParser:
     """Creates the argument parser for this script"""
     args = ArgumentParser(description="Provides a way to interact with the playwhat.service daemon")
@@ -114,6 +121,15 @@ def create_argparser() -> ArgumentParser:
     refresh_action = actions.add_parser("refresh", help="Refresh the PlayingWHAT display")
     refresh_action.set_defaults(func=refresh)
 
+    save_action = actions.add_parser(
+        "screenshot",
+        help="Save a screenshot of what's showing on the PlayingWHAT display")
+    save_action.set_defaults(func=screenshot)
+    save_action.add_argument(
+        "output",
+        type=_validate_path,
+        help="The path to save the screenshot to.")
+
     return args.parse_args()
 
 def main():
@@ -129,6 +145,13 @@ def main():
 
     # Run the action the user as speciifed
     args.func(dotenv_path, args)
+
+def _validate_path(path: str) -> str:
+    # Ensure that the base path exists
+    if not os.path.exists(os.path.dirname(path)):
+        raise ArgumentTypeError("The path provided does not exist")
+
+    return path
 
 if __name__ == "__main__":
     main()

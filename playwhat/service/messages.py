@@ -6,6 +6,7 @@ from playwhat.painter.types import PainterOptions
 
 ID_RESPONSE = 0
 ID_UPDATE_DISPLAY = 1
+ID_SCREENSHOT = 2
 
 DefaultHandler = StreamMessageHandler() # pylint: disable=invalid-name
 
@@ -27,6 +28,31 @@ class ResponseMessage:
         """Returns a `ResponseMessage` that can be serialized to JSON"""
         return {
             "succeeded": self.succeeded
+        }
+
+@DefaultHandler.register
+class ScreenshotMessage:
+    """Provides a message that is used for getting a screenshot of the InkyWHAT display"""
+    MessageID = ID_SCREENSHOT
+
+    def __init__(self, uid: int, output_path: str):
+        """Constructor"""
+        self.output_path = output_path
+        self.uid = uid
+
+    @classmethod
+    def from_json(cls, message):
+        """Creates a `ScreenshotMessage` from the provided JSON"""
+        return cls(
+            message["uid"],
+            message["output_path"]
+        )
+
+    def to_json(self):
+        """Returns a `ResponseMessage` that can be serialized to JSON"""
+        return {
+            "uid": self.uid,
+            "output_path": self.output_path
         }
 
 @DefaultHandler.register

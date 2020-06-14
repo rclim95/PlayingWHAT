@@ -5,14 +5,16 @@ from asyncio import AbstractServer, Task, CancelledError, StreamReader, StreamWr
 from datetime import timedelta
 import json
 import os
+from socket import socket
 from time import time
 
 import spotipy
 
 import playwhat
-from playwhat.painter import display, PainterOptions, RepeatStatus, DeviceType
+from playwhat.painter import display, save_screenshot, PainterOptions, RepeatStatus, DeviceType
 from playwhat.service import LOGGER, PATH_UNIX_SOCKET
-from playwhat.service.messages import DefaultHandler, UpdateDisplayMessage, ResponseMessage
+from playwhat.service.messages import DefaultHandler, UpdateDisplayMessage, ResponseMessage, \
+    ScreenshotMessage
 
 _server: AbstractServer = None
 _poller: Task = None
@@ -78,7 +80,15 @@ async def _handle_request(reader: StreamReader, writer: StreamWriter):
         display(options)
 
         succeeded = True
- 
+    elif isinstance(request, ScreenshotMessage):
+        LOGGER.info("Client sent ScreenshotMessage, parameters = %s",
+                    json.dumps(request.to_json()))
+
+        LOGGER.info("Saving InkyWHAT screenshot to %s", request.output_path)
+        save_screenshot(request.output_path, request.uid)
+
+        succeeded = True
+
     # Write the result and close the connection
     LOGGER.info("Request handled, succeeded = %s", succeeded)
     await DefaultHandler.write(writer, ResponseMessage(succeeded))
@@ -87,9 +97,9 @@ async def _handle_request(reader: StreamReader, writer: StreamWriter):
 async def _on_client_connected(reader: StreamReader, writer: StreamWriter):
     """Callced when a client has connected to the daemon server"""
     # Get information on the socket that has just connected
-    socket_info = writer.get_extra_info("socket")
-    if socket_info is not None:
-        LOGGER.info("Client \"%s\" connected", socket_info.peername)
+    peername = writer.get_extra_info("peername") # type: socket
+    if peername is not None:
+        LOGGER.info("Client \"%s\" connected", peername)
     else:
         LOGGER.info("Client connected")
 

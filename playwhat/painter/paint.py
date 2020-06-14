@@ -170,7 +170,7 @@ def _paint_footer(image: Image.Image, draw: ImageDraw.ImageDraw, options: Painte
 
     # Draw the user's name
     _, name_text_height = draw.textsize(options.user_name, font)
-    name_max_width =  ((image.width - (PADDING * 2)) // 2) - \
+    name_max_width = ((image.width - (PADDING * 2)) // 2) - \
         avatar_image_width - FOOTER_ICON_NAME_SPACING - \
         (FOOTER_USER_DEVICE_SPACING // 2)
     name_x = avatar_image_x + avatar_image_width + FOOTER_ICON_NAME_SPACING

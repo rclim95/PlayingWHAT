@@ -85,11 +85,16 @@ class StreamMessageHandler(MessageHandler):
             warnings.warn("Unknown message in stream (0x01 not found)")
             return
 
-        # The next part should be the message ID follow by STX (start of text). Keep reading
-        # until we come across STX.
-        message_id_bytes = await reader.readuntil(b'\x02')
-        message_id = int.from_bytes(message_id_bytes[:-1], "big", signed=False)
+        # The next part should be the message ID follow by STX (start of text). Read the next
+        # 4 bytes.
+        message_id_bytes = await reader.readexactly(4)
+        message_id = int.from_bytes(message_id_bytes, "big", signed=False)
         LOGGER.debug("Parsed message ID = %d", message_id)
+
+        # At this point, we should be reading a SOT.
+        sot = await reader.readexactly(1)
+        if sot != b'\02':
+            warnings.warn("SOT not found.")
 
         # The next part should be the message follow by EOT (end of transmission). Keep reading
         # until we come across EOT

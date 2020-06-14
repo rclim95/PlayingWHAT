@@ -63,7 +63,7 @@ class RepeatStatus(IntEnum):
             return RepeatStatus[string]
         except KeyError as error:
             raise ValueError from error
-    
+
     @staticmethod
     def from_api(string: str):
         """Gets an enum value from a string that was returned from Spotify's API"""

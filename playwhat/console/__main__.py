@@ -112,5 +112,7 @@ def _validate_path(path: str) -> str:
     if not os.path.exists(base_path):
         raise ArgumentTypeError("The directory \"{}\" does not exist.".format(base_path))
 
+    return path
+
 if __name__ == "__main__":
     main()

@@ -111,16 +111,16 @@ def ellipsize_text(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
         return text
 
     # Otherwise, we'll need to do some ellipsizing.
-    ellipsis_width, _ = font.getsize("…")
-    chars_to_subtract = 1
+    chars_end = 1
     while True:
-        text_width, _ = font.getsize(text[:-chars_to_subtract])
-        if text_width + ellipsis_width < max_width:
-            # We're good to go
-            return text[:-chars_to_subtract] + "…"
+        text_width, _ = font.getsize(text[:chars_end] + "...")
+        if text_width < max_width:
+            # Keep incrementing--we can fit more characters!
+            chars_end += 1
+            continue
 
-        # Nope, we need to keep subtracting.
-        chars_to_subtract += 1
+        # All right, seems like we've reached our limit.
+        return text[:chars_end - 1] + "..."
 
 def wrap_and_ellipsize_text(text: str,
                             font: ImageFont.ImageFont,
@@ -164,8 +164,11 @@ def wrap_and_ellipsize_text(text: str,
 
             # Can we write a new line? That is, make sure we haven't reached our maximum line.
             if line_count == max_lines:
-                # We've reached our maximum line. Ellipsize our last line.
-                return result + ellipsize_text(line, font, max_width)
+                # We've reached our maximum line. Ellipsize our last line. Note that include
+                # everything after last_space, so that we properly ellipsize our message, should
+                # we have more lines that would've been added (but couldn't because then we would
+                # exceed our max_lines).
+                return result + ellipsize_text(line + text[last_space:], font, max_width)
 
             # We haven't reached our maximum line. Append a new line and continue.
             result += line + "\n"

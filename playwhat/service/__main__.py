@@ -28,7 +28,7 @@ def main():
     # Show some useful information about the environment variables we've loaded
     LOGGER.debug("SPOTIFY_CLIENT_ID = %s", os.getenv(playwhat.ENV_CLIENT_ID))
     LOGGER.debug("SPOTIFY_CLIENT_SECRET = %s", "*" * len(os.getenv(playwhat.ENV_CLIENT_SECRET)))
-    LOGGER.debug("SPOTIFY_USER_TOKEN = %s", "*" * len(os.getenv(playwhat.ENV_USER_TOKEN)))
+    LOGGER.debug("SPOTIFY_USERNAME = %s", os.getenv(playwhat.ENV_USERNAME))
 
     try:
         # Setup the daemon context

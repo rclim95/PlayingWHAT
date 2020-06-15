@@ -5,8 +5,11 @@ import dataclasses
 import os
 
 from playwhat.service import LOGGER, PATH_UNIX_SOCKET
-from playwhat.service.messages import UpdateDisplayMessage, ResponseMessage, DefaultHandler, \
-    ScreenshotMessage
+from playwhat.service.messages import DefaultHandler, \
+    ResponseMessage, \
+    UpdateDisplayMessage, \
+    ScreenshotMessage, \
+    RefreshMessage
 from playwhat.painter.types import PainterOptions
 
 async def send_display_update(options: PainterOptions):
@@ -18,6 +21,22 @@ async def send_display_update(options: PainterOptions):
     handler = DefaultHandler
     reader, writer = await asyncio.open_unix_connection(PATH_UNIX_SOCKET)
     await handler.write(writer, UpdateDisplayMessage.from_painter_options(options))
+
+    # Wait for an acknowledgment from the daemon server and then close the connection
+    response = await DefaultHandler.read(reader) # type: ResponseMessage
+    LOGGER.debug("Daemon server responded, succeeded = %s", response.succeeded)
+    writer.close()
+
+async def send_refresh():
+    """
+    Sends a message to the `playwhat.service` daemon to refreh the InkyWHAT display with the
+    latest playback information as reported by the Spotify API
+    """
+    LOGGER.info("Sending refresh request")
+
+    # Establish a connection to Unix socket for this daemon and send the option
+    reader, writer = await asyncio.open_unix_connection(PATH_UNIX_SOCKET)
+    await DefaultHandler.write(writer, RefreshMessage())
 
     # Wait for an acknowledgment from the daemon server and then close the connection
     response = await DefaultHandler.read(reader) # type: ResponseMessage

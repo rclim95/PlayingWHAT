@@ -13,8 +13,11 @@ import spotipy
 import playwhat
 from playwhat.painter import display, save_screenshot, PainterOptions, RepeatStatus, DeviceType
 from playwhat.service import LOGGER, PATH_UNIX_SOCKET
-from playwhat.service.messages import DefaultHandler, UpdateDisplayMessage, ResponseMessage, \
-    ScreenshotMessage
+from playwhat.service.messages import DefaultHandler, \
+    UpdateDisplayMessage, \
+    ResponseMessage, \
+    ScreenshotMessage, \
+    RefreshMessage
 
 _server: AbstractServer = None
 _poller: Task = None
@@ -46,7 +49,7 @@ def reload():
     LOGGER.info("Environment variables reloaded")
     LOGGER.debug("SPOTIFY_CLIENT_ID = %s", os.getenv(playwhat.ENV_CLIENT_ID))
     LOGGER.debug("SPOTIFY_CLIENT_SECRET = %s", "*" * len(os.getenv(playwhat.ENV_CLIENT_SECRET)))
-    LOGGER.debug("SPOTIFY_USER_TOKEN = %s", "*" * len(os.getenv(playwhat.ENV_USER_TOKEN)))
+    LOGGER.debug("SPOTIFY_USERNAME = %s", os.getenv(playwhat.ENV_USERNAME))
 
     # Success!
     LOGGER.info("Reloaded .env successfully")
@@ -61,6 +64,33 @@ def stop():
     if _poller is not None:
         LOGGER.info("Stopping poller")
         _poller.cancel()
+
+def _create_client() -> spotipy.Spotify:
+    # Setup who we are
+    oauth_manager = spotipy.SpotifyOAuth(
+        client_id=os.getenv(playwhat.ENV_CLIENT_ID),
+        client_secret=os.getenv(playwhat.ENV_CLIENT_SECRET),
+        redirect_uri=os.getenv(playwhat.ENV_REDIRECT_URL),
+        cache_path=os.getenv(playwhat.ENV_CREDENTIAL_CACHE_PATH),
+        username=os.getenv(playwhat.ENV_USERNAME),
+        scope=" ".join(playwhat.API_SCOPES)
+    )
+    user_token = oauth_manager.get_access_token(as_dict=False)
+    if user_token is None:
+        # The user hasn't authenticated with the Spotify API. Tell them that they must
+        # authenticate in order to continue.
+        LOGGER.error(
+            "A user has not authenticated with the Spotify API, so no playback "
+            "information can be shown at this time."
+        )
+        LOGGER.info(
+            "Please authenticate with the Spotify API at least once by running the "
+            "following command:\n"
+            "$ python3 -m playwhat.console auth <spotify-username>"
+        )
+        return None
+
+    return spotipy.Spotify(auth=user_token, oauth_manager=oauth_manager)
 
 async def _handle_request(reader: StreamReader, writer: StreamWriter):
     """Handles the incoming request"""
@@ -88,14 +118,78 @@ async def _handle_request(reader: StreamReader, writer: StreamWriter):
         save_screenshot(request.output_path, request.uid)
 
         succeeded = True
+    elif isinstance(request, RefreshMessage):
+        LOGGER.info("Client sent RefreshMessage")
+        _handle_refresh_message()
+        succeeded = True
+
 
     # Write the result and close the connection
     LOGGER.info("Request handled, succeeded = %s", succeeded)
     await DefaultHandler.write(writer, ResponseMessage(succeeded))
     writer.close()
 
+def _handle_refresh_message():
+    # Communicate with the Spotify API and start getting information about their
+    # currently played track
+    api_client = _create_client()
+    if api_client is None:
+        # Something went wrong.
+        return
+
+    # Make sure that the user is playing something. If playback is none, then that means
+    # the user isn't playing anything. If there is no "item", this implies that the user is
+    # probably in private mode. Also make sure that the "item" is a track.
+    playback = api_client.current_playback()
+    if playback is None:
+        LOGGER.warning("No playback state is available. The user isn't playing anything.")
+        return
+
+    current_item = playback["item"]
+    if current_item is None:
+        LOGGER.warning("The current item is not available. Is the user in private mode?")
+        return
+
+    if current_item["type"] != "track":
+        LOGGER.warning("The current item is not a track object. Tracks are only supported.")
+        return
+
+    # Get information about the current user so that we can show their information on the
+    # InkyWHAT display
+    me = api_client.current_user() # pylint: disable=invalid-name
+
+    # Build the PainterOptions that'll pass to the painter and display it
+    device = playback["device"]
+    track = playback["item"]
+    album = track["album"]
+    artists = track["artists"]
+    options = PainterOptions(
+        artist_name="; ".join(map(lambda artist: artist["name"], artists)),
+        album_name=album["name"],
+        album_image_url=album["images"][0]["url"],
+        device_name=device["name"],
+        device_type=DeviceType.from_api(device["type"]),
+        duration=timedelta(milliseconds=track["duration_ms"]),
+        is_playing=playback["is_playing"],
+        is_shuffled=playback["shuffle_state"],
+        repeat_status=RepeatStatus.from_api(playback["repeat_state"]),
+        track_name=track["name"],
+        user_name=me["display_name"],
+        user_image_url=me["images"][0]["url"]
+    )
+
+    # NOTE: Record the time it took to paint the display, since the InkyWHAT has a slow
+    # refresh rate (which is a limitation of e-ink displays in general). This is so we
+    # can account for it when calculating the time remaining.
+    start_time = time()
+    display(options)
+    end_time = time()
+
+    refresh_sec = end_time - start_time
+    LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)
+
 async def _on_client_connected(reader: StreamReader, writer: StreamWriter):
-    """Callced when a client has connected to the daemon server"""
+    """Called when a client has connected to the daemon server"""
     # Get information on the socket that has just connected
     peername = writer.get_extra_info("peername") # type: socket
     if peername is not None:
@@ -131,24 +225,18 @@ async def _do_run_poller():
         try:
             LOGGER.info("Updating InkyWHAT with latest playback status from Spotify")
 
-            # Setup who we are
-            oauth_manager = spotipy.SpotifyOAuth(
-                client_id=os.getenv(playwhat.ENV_CLIENT_ID),
-                client_secret=os.getenv(playwhat.ENV_CLIENT_SECRET),
-                redirect_uri=os.getenv(playwhat.ENV_REDIRECT_URL),
-                cache_path=os.getenv(playwhat.ENV_CREDENTIAL_CACHE_PATH),
-                scope=" ".join(playwhat.API_SCOPES)
-            )
-            user_token = oauth_manager.get_access_token(as_dict=False)
-
             # Communicate with the Spotify API and start getting information about their
             # currently played track
-            api_client = spotipy.Spotify(auth=user_token, oauth_manager=oauth_manager)
-            playback = api_client.current_playback()
+            api_client = _create_client()
+            if api_client is None:
+                # Something went wrong.
+                has_error = True
+                continue
 
             # Make sure that the user is playing something. If playback is none, then that means
-            # the user isn't playing anything. If there is no "item", this implies that the user is 
+            # the user isn't playing anything. If there is no "item", this implies that the user is
             # probably in private mode. Also make sure that the "item" is a track.
+            playback = api_client.current_playback()
             if playback is None:
                 LOGGER.warning("No playback state is available. The user isn't playing anything.")
                 has_error = True
@@ -188,10 +276,21 @@ async def _do_run_poller():
                 user_name=me["display_name"],
                 user_image_url=me["images"][0]["url"]
             )
-            display(options)
 
-            # Calculate the duration remaining
-            remaining = timedelta(milliseconds=track["duration_ms"] - playback["progress_ms"])
+            # NOTE: Record the time it took to paint the display, since the InkyWHAT has a slow
+            # refresh rate (which is a limitation of e-ink displays in general). This is so we
+            # can account for it when calculating the time remaining.
+            start_time = time()
+            display(options)
+            end_time = time()
+
+            refresh_sec = end_time - start_time
+            LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)
+
+            # Calculate the duration remaining (including the time it took to refresh the screen)
+            remaining = \
+                timedelta(milliseconds=track["duration_ms"] - playback["progress_ms"]) - \
+                timedelta(seconds=refresh_sec)
         except Exception: # pylint: disable=broad-except
             LOGGER.exception("Failed to update InkyWHAT with latest playback info from Spotify")
             has_error = True

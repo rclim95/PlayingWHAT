@@ -7,6 +7,7 @@ from playwhat.painter.types import PainterOptions
 ID_RESPONSE = 0
 ID_UPDATE_DISPLAY = 1
 ID_SCREENSHOT = 2
+ID_REFRESH = 3
 
 DefaultHandler = StreamMessageHandler() # pylint: disable=invalid-name
 
@@ -156,3 +157,24 @@ class UpdateDisplayMessage:
             self.user_name,
             self.user_image_url
         )
+
+@DefaultHandler.register
+class RefreshMessage:
+    """
+    Provides a message that is used to update the InkyWHAT display with the latest playback info
+    from Spotify
+    """
+    MessageID = ID_REFRESH
+
+    def __init__(self):
+        """Constructor"""
+        pass
+
+    @classmethod
+    def from_json(cls, message): # pylint: disable=unused-argument
+        """Creates a `RefreshMessage` from the provided JSON"""
+        return cls()
+
+    def to_json(self):
+        """Returns a `RefreshMessage` that can be serialized to JSON"""
+        return {}

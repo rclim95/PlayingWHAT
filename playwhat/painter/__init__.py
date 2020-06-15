@@ -22,8 +22,8 @@ def display(options: PainterOptions) -> Image.Image:
     if _current_options == options:
         LOGGER.warning("The options passed appears to be the same on screen, ignoring...")
         return
-    else:
-        _current_options = options
+
+    _current_options = options
 
     image_rotate_degrees = os.getenv(playwhat.ENV_ROTATE_IMAGE, "0")
     image = paint(options)

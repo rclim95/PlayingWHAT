@@ -1,7 +1,8 @@
 {
     "python.pythonPath": ".venv/bin/python",
-    "python.linting.pylintEnabled": true,
+    "python.languageServer": "Jedi",
     "python.jediEnabled": true,
+    "python.linting.pylintEnabled": true,
     "files.exclude": {
         "**/.git": true,
         "**/__pycache__": true

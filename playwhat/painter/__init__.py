@@ -5,7 +5,7 @@ from inky import InkyWHAT
 from PIL import Image, ImageDraw, ImageFont
 import playwhat
 from playwhat.painter.types import PainterOptions, DeviceType, RepeatStatus
-from playwhat.painter.paint import paint
+import playwhat.painter.paint as p
 
 LOGGER = logging.getLogger(__package__)
 
@@ -25,8 +25,31 @@ def display(options: PainterOptions) -> Image.Image:
 
     _current_options = options
 
-    image_rotate_degrees = os.getenv(playwhat.ENV_ROTATE_IMAGE, "0")
-    image = paint(options)
+    image_rotate_degrees = os.getenv(playwhat.ENV_ROTATE_IMAGE, "180")
+    image = p.paint(options)
+    image = image.rotate(int(image_rotate_degrees))
+
+    inky_display = InkyWHAT("red")
+    inky_display.set_border(InkyWHAT.WHITE)
+    inky_display.set_image(image)
+    inky_display.show()
+
+def display_not_playing() -> Image.Image:
+    """
+    Shows the "Not Playing" screen on the InkyWHAT display
+    """
+    global _current_options # pylint: disable=invalid-name,global-statement
+
+    # Because it takes a long time to update the InkyWHAT, only update it _if_ we really have to
+    if _current_options is None:
+        LOGGER.warning("The \"Not Playing\" screen is already shown, ignoring...")
+        return
+    
+    # We're not playing anything, so set _current_options to None
+    _current_options = None
+
+    image_rotate_degrees = os.getenv(playwhat.ENV_ROTATE_IMAGE, "180")
+    image = p.paint_not_playing()
     image = image.rotate(int(image_rotate_degrees))
 
     inky_display = InkyWHAT("red")
@@ -47,7 +70,7 @@ def save_screenshot(output_path: str, uid: int):
         return
 
     try:
-        screen = paint(_current_options)
+        screen = p.paint(_current_options)
         screen.save(output_path, format="PNG")
 
         os.chown(output_path, uid, -1)

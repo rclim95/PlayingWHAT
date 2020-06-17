@@ -53,3 +53,12 @@ FOOTER_ICON_NAME_SPACING: int = 5
 
 # The amount of spacing between the user's name and their device
 FOOTER_USER_DEVICE_SPACING: int = 4
+
+# The amount of spacing between the music icon and the "Nothing Playing" heading
+NOT_PLAYING_ICON_SPACING: int = 5
+
+# The point size of the "Nothing Playing" heading font
+NOT_PLAYING_HEADING_POINT_SIZE: int = 30
+
+# The point size of the info text under the "Nothing Playing" heading font
+NOT_PLAYING_CONTENT_POINT_SIZE: int = 26

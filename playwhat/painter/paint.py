@@ -25,6 +25,59 @@ def paint(options: PainterOptions) -> Image.Image:
 
     return image
 
+def paint_not_playing() -> Image.Image:
+    """
+    Paints the "Not Playing" screen and returns a `PIL.Image` that can be shown on the InkyWHAT
+    display
+    """
+    image = Image.new("P", (InkyWHAT.WIDTH, InkyWHAT.HEIGHT))
+    image.putpalette((
+        *(255, 255, 255),           # White
+        *(0, 0, 0),                 # Black
+        *(255, 0, 0),               # Red
+        *((0, 0, 0) * 253)          # Remainder
+    ))
+    draw = ImageDraw.Draw(image)
+
+    # Draw the music icon
+    with Image.open(os.path.join(PATH_ASSET_IMAGE, "icon-music.png")) as music:
+        music_width, music_height = music.width, music.height
+        image.paste(music, ((image.width - music_width) // 2, PADDING))
+
+    # Figure out how to draw the heading text, which should appear beneath the music icon, also
+    # centered.
+    heading_text = "Nothing's Playing\nRight Now"
+    heading_font = ImageFont.truetype(
+        os.path.join(PATH_ASSET_FONT, "open-sans.ttf"),
+        size=NOT_PLAYING_HEADING_POINT_SIZE)
+    heading_width, heading_height = heading_font.getsize_multiline(heading_text)
+    heading_x = (image.width - heading_width) // 2
+    heading_y = PADDING + music_height + NOT_PLAYING_ICON_SPACING
+
+    # Now draw the heading text
+    draw.multiline_text(
+        (heading_x, heading_y), heading_text,
+        align="center", font=heading_font, fill=InkyWHAT.RED)
+
+    # Figure out how to draw the context text, which should appear underneath the heading text,
+    # also centered.
+    content_text = "Play some music on Spotify, and we'll\nshow what's playing on here"
+    content_font = ImageFont.truetype(
+        os.path.join(PATH_ASSET_FONT, "open-sans.ttf"),
+        size=NOT_PLAYING_CONTENT_POINT_SIZE)
+    content_width, _ = content_font.getsize_multiline(content_text)
+    content_x = (image.width - content_width) // 2
+    content_y = PADDING + music_height + NOT_PLAYING_ICON_SPACING + heading_height + \
+        NOT_PLAYING_ICON_SPACING
+
+    # Now draw the content text
+    draw.multiline_text(
+        (content_x, content_y), content_text,
+        align="center", font=content_font, fill=InkyWHAT.BLACK
+    )
+
+    return image
+
 def _paint_header(image: Image.Image, draw: ImageDraw.ImageDraw, options: PainterOptions):
     # Draw the Spotify logo
     with Image.open(os.path.join(PATH_ASSET_IMAGE, "logo-spotify.png")) as logo:

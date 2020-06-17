@@ -44,7 +44,7 @@ def display_not_playing() -> Image.Image:
     if _current_options is None:
         LOGGER.warning("The \"Not Playing\" screen is already shown, ignoring...")
         return
-    
+
     # We're not playing anything, so set _current_options to None
     _current_options = None
 
@@ -61,16 +61,12 @@ def save_screenshot(output_path: str, uid: int):
     """
     Saves the screenshot of the InkyWHAT display to the speciifed `output_path`
     """
-    if _current_options is None:
-        # We haven't updated the screen, so we really don't know what the screen will look like.
-        LOGGER.warning(
-            "Can't save screenshot of InkyWHAT display: you must call display(PainterOptions) "
-            "at least once before you can save a screenshot."
-        )
-        return
-
     try:
-        screen = p.paint(_current_options)
+        if _current_options is None:
+            screen = p.paint_not_playing()
+        else:
+            screen = p.paint(_current_options)
+
         screen.save(output_path, format="PNG")
 
         os.chown(output_path, uid, -1)

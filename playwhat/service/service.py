@@ -11,7 +11,12 @@ from time import time
 import spotipy
 
 import playwhat
-from playwhat.painter import display, save_screenshot, PainterOptions, RepeatStatus, DeviceType
+from playwhat.painter import display, \
+    display_not_playing, \
+    save_screenshot
+from playwhat.painter.types import PainterOptions, \
+    RepeatStatus, \
+    DeviceType
 from playwhat.service import LOGGER, PATH_UNIX_SOCKET
 from playwhat.service.messages import DefaultHandler, \
     UpdateDisplayMessage, \
@@ -21,6 +26,7 @@ from playwhat.service.messages import DefaultHandler, \
 
 _server: AbstractServer = None
 _poller: Task = None
+_user = None
 
 async def start():
     """Starts the service"""
@@ -37,6 +43,8 @@ async def start():
 
 def reload():
     """Reloads the configuration for the service"""
+    global _user
+
     # Setup the logging again
     LOGGER.info("Reloading logging information")
     playwhat.setup_logging(logger=LOGGER)
@@ -50,6 +58,10 @@ def reload():
     LOGGER.debug("SPOTIFY_CLIENT_ID = %s", os.getenv(playwhat.ENV_CLIENT_ID))
     LOGGER.debug("SPOTIFY_CLIENT_SECRET = %s", "*" * len(os.getenv(playwhat.ENV_CLIENT_SECRET)))
     LOGGER.debug("SPOTIFY_USERNAME = %s", os.getenv(playwhat.ENV_USERNAME))
+
+    # Reset the _user variable, so that the next time we're polling Spotify, we get fresh information
+    # about the user logged in
+    _user = None
 
     # Success!
     LOGGER.info("Reloaded .env successfully")
@@ -120,8 +132,7 @@ async def _handle_request(reader: StreamReader, writer: StreamWriter):
         succeeded = True
     elif isinstance(request, RefreshMessage):
         LOGGER.info("Client sent RefreshMessage")
-        _handle_refresh_message()
-        succeeded = True
+        succeeded = _handle_refresh_message()
 
 
     # Write the result and close the connection
@@ -130,63 +141,27 @@ async def _handle_request(reader: StreamReader, writer: StreamWriter):
     writer.close()
 
 def _handle_refresh_message():
+    global _user
+
     # Communicate with the Spotify API and start getting information about their
     # currently played track
     api_client = _create_client()
     if api_client is None:
         # Something went wrong.
-        return
+        return False
 
-    # Make sure that the user is playing something. If playback is none, then that means
-    # the user isn't playing anything. If there is no "item", this implies that the user is
-    # probably in private mode. Also make sure that the "item" is a track.
+    # Get the current playback
     playback = api_client.current_playback()
-    if playback is None:
-        LOGGER.warning("No playback state is available. The user isn't playing anything.")
-        return
 
-    current_item = playback["item"]
-    if current_item is None:
-        LOGGER.warning("The current item is not available. Is the user in private mode?")
-        return
+    # As well as information about the user that's logged into Spotify (note that we cache
+    # the result so that we're not calling this endpoint every time--it's unlikely the
+    # information returned by api_client.me() will be changing constantly)
+    if _user is None:
+        _user = api_client.me()
 
-    if current_item["type"] != "track":
-        LOGGER.warning("The current item is not a track object. Tracks are only supported.")
-        return
-
-    # Get information about the current user so that we can show their information on the
-    # InkyWHAT display
-    me = api_client.current_user() # pylint: disable=invalid-name
-
-    # Build the PainterOptions that'll pass to the painter and display it
-    device = playback["device"]
-    track = playback["item"]
-    album = track["album"]
-    artists = track["artists"]
-    options = PainterOptions(
-        artist_name="; ".join(map(lambda artist: artist["name"], artists)),
-        album_name=album["name"],
-        album_image_url=album["images"][0]["url"],
-        device_name=device["name"],
-        device_type=DeviceType.from_api(device["type"]),
-        duration=timedelta(milliseconds=track["duration_ms"]),
-        is_playing=playback["is_playing"],
-        is_shuffled=playback["shuffle_state"],
-        repeat_status=RepeatStatus.from_api(playback["repeat_state"]),
-        track_name=track["name"],
-        user_name=me["display_name"],
-        user_image_url=me["images"][0]["url"]
-    )
-
-    # NOTE: Record the time it took to paint the display, since the InkyWHAT has a slow
-    # refresh rate (which is a limitation of e-ink displays in general). This is so we
-    # can account for it when calculating the time remaining.
-    start_time = time()
-    display(options)
-    end_time = time()
-
-    refresh_sec = end_time - start_time
-    LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)
+    # Let's update!
+    _update_display(_user, playback)
+    return True
 
 async def _on_client_connected(reader: StreamReader, writer: StreamWriter):
     """Called when a client has connected to the daemon server"""
@@ -217,11 +192,14 @@ async def _do_run_command_server():
 
 async def _do_run_poller():
     """Runs the poller"""
+    global _server, _user # pylint: disable=invalid-name,global-statement
+
     LOGGER.info("Starting poller...")
 
+    last_song = None
+    fibonacci_iter = _fibonnaci()
     while True:
-        remaining = timedelta()
-        has_error = False
+        delay_sec = 60.0
         try:
             LOGGER.info("Updating InkyWHAT with latest playback status from Spotify")
 
@@ -229,94 +207,129 @@ async def _do_run_poller():
             # currently played track
             api_client = _create_client()
             if api_client is None:
-                # Something went wrong.
-                has_error = True
+                # Something went wrong. Poll again later.
+                #
+                # NOTE: Since we're in a try/except/finally block, the finally block will ensure
+                # that we'll delay our poll before proceeding.
                 continue
 
-            # Make sure that the user is playing something. If playback is none, then that means
-            # the user isn't playing anything. If there is no "item", this implies that the user is
-            # probably in private mode. Also make sure that the "item" is a track.
+            # Get the current playback
             playback = api_client.current_playback()
-            if playback is None:
-                LOGGER.warning("No playback state is available. The user isn't playing anything.")
-                has_error = True
-                continue
 
-            current_item = playback["item"]
-            if current_item is None:
-                LOGGER.warning("The current item is not available. Is the user in private mode?")
-                has_error = True
-                continue
+            # As well as information about the user that's logged into Spotify (note that we cache
+            # the result so that we're not calling this endpoint every time--it's unlikely the
+            # information returned by api_client.me() will be changing constantly)
+            if _user is None:
+                _user = api_client.me()
 
-            if current_item["type"] != "track":
-                LOGGER.warning("The current item is not a track object. Tracks are only supported.")
-                has_error = True
-                continue
-
-            # Get information about the current user so that we can show their information on the
-            # InkyWHAT display
-            me = api_client.current_user() # pylint: disable=invalid-name
-
-            # Build the PainterOptions that'll pass to the painter and display it
-            device = playback["device"]
-            track = playback["item"]
-            album = track["album"]
-            artists = track["artists"]
-            options = PainterOptions(
-                artist_name="; ".join(map(lambda artist: artist["name"], artists)),
-                album_name=album["name"],
-                album_image_url=album["images"][0]["url"],
-                device_name=device["name"],
-                device_type=DeviceType.from_api(device["type"]),
-                duration=timedelta(milliseconds=track["duration_ms"]),
-                is_playing=playback["is_playing"],
-                is_shuffled=playback["shuffle_state"],
-                repeat_status=RepeatStatus.from_api(playback["repeat_state"]),
-                track_name=track["name"],
-                user_name=me["display_name"],
-                user_image_url=me["images"][0]["url"]
-            )
-
-            # NOTE: Record the time it took to paint the display, since the InkyWHAT has a slow
-            # refresh rate (which is a limitation of e-ink displays in general). This is so we
-            # can account for it when calculating the time remaining.
+            # Update the screen. Note that we're recording how long it took to refresh the screen
+            # so that we take that into consideration while figuring out how much longer until
+            # the user has finished the track (assuming no skipping).
             start_time = time()
-            display(options)
+            _update_display(_user, playback)
             end_time = time()
-
             refresh_sec = end_time - start_time
-            LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)
 
-            # Calculate the duration remaining (including the time it took to refresh the screen)
-            remaining = \
-                timedelta(milliseconds=track["duration_ms"] - playback["progress_ms"]) - \
-                timedelta(seconds=refresh_sec)
+            if playback is not None:
+                # Calculate the duration remaining (including the time it took to refresh the
+                # screen) so we can determine whether we should use Fibonnaci delays or the time
+                # remaining.
+                track = playback["item"]
+                remaining = \
+                    timedelta(milliseconds=track["duration_ms"] - playback["progress_ms"]) - \
+                    timedelta(seconds=refresh_sec)
+                LOGGER.debug("%s remaining for the current track", str(remaining))
+
+                # Is this a different song being played?
+                if track["id"] != last_song:
+                    # Yup, it's a new song. In that case, we should reset our Fibonnaci series.
+                    #
+                    # Note that we're using Fibonnaci to figure out when to poll again. We're
+                    # operating under the assumption that the user will most likely skip within the
+                    # first half of the song, but decrease that chance as the song continues playing
+                    #
+                    # Interesting tidbits:
+                    # https://musicmachinery.com/2014/05/02/the-skip/
+                    fibonacci_iter = _fibonnaci()
+                    last_song = track["id"]
+
+                # Get the next number in our Fibonnaci series
+                next_fibonnaci = next(fibonacci_iter)
+
+                # Will we exceed the length of the song if we were to delay another Fibonnaci
+                # series?
+                if remaining - timedelta(seconds=next_fibonnaci) <= timedelta(seconds=0):
+                    # Use the time remaining to figure out when to skip to the next track. We'll
+                    # assume the user will play this music to the end.
+                    delay_sec = remaining.total_seconds()
+                else:
+                    delay_sec = next_fibonnaci
+            else:
+                # The user isn't playing anything. We'll check again in 60 seconds.
+                delay_sec = 60.0
         except Exception: # pylint: disable=broad-except
             LOGGER.exception("Failed to update InkyWHAT with latest playback info from Spotify")
-            has_error = True
         finally:
-            delay_sec: float = 0
+            # Ensure that delay_sec is a number > 0, so that we're not polling again immediately.
+            delay_sec = max(delay_sec, 1)
 
-            # Idle the loop, which will be dependent on (1) have we encountered an error or (2)
-            # what's the amount of time remaining on the current track playing?
-            if has_error:
-                # By default, we'll try again in another minute
-                delay_sec = 60
-            else:
-                # Otherwise, use the time remaining to figure out the delay.
-                #
-                # Let's assume the user may switch to the next track a quarter of the way from
-                # where they're currently listening. That's when we'll poll the Spotify API for
-                # the playback state.
-                #
-                # However, if that quarter ends up being <= 15 seconds, we'll assume the user
-                # we'll listen all the way to the end of said track (cap to a maximum of 15 seconds)
-                delay_sec = remaining.total_seconds() / 4
-                if delay_sec <= 15:
-                    # Note that we do a max(remaining.total_seconds(), ...) so that if the total
-                    # seconds is 0 seconds, we'll just wait another second (instead of trying to
-                    # poll immediately after by doing delay_sec = 0).
-                    delay_sec = min(max(remaining.total_seconds(), 1), 15.0)
-
-            LOGGER.info("Polling again in %0.0f seconds", delay_sec)
+            # Now to wait...
+            LOGGER.info("Polling Spotify API again in %0.0f seconds", delay_sec)
             await asyncio.sleep(delay_sec)
+
+def _fibonnaci():
+    # pylint: disable=invalid-name
+    a, b = 0, 1
+    while True:
+        c = a + b
+        a = b
+        b = c
+        yield c
+
+def _update_display(current_user, playback):
+    if playback is None:
+        LOGGER.info("The user is not playing anything.")
+
+        start_time = time()
+        display_not_playing()
+        end_time = time()
+
+        refresh_sec = end_time - start_time
+        LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)
+        return True
+    else:
+        current_item = playback["item"]
+        if current_item is None:
+            LOGGER.warning("The current item is not available. Is the user in private mode?")
+            return False
+
+        if current_item["type"] != "track":
+            LOGGER.warning("The current item is not a track object. Tracks are only supported.")
+            return False
+
+        # Build the PainterOptions that'll pass to the painter and display it
+        device = playback["device"]
+        track = playback["item"]
+        album = track["album"]
+        artists = track["artists"]
+        options = PainterOptions(
+            artist_name="; ".join(map(lambda artist: artist["name"], artists)),
+            album_name=album["name"],
+            album_image_url=album["images"][0]["url"],
+            device_name=device["name"],
+            device_type=DeviceType.from_api(device["type"]),
+            duration=timedelta(milliseconds=track["duration_ms"]),
+            is_playing=True,
+            is_shuffled=playback["shuffle_state"],
+            repeat_status=RepeatStatus.from_api(playback["repeat_state"]),
+            track_name=track["name"],
+            user_name=current_user["display_name"],
+            user_image_url=current_user["images"][0]["url"]
+        )
+
+        start_time = time()
+        display(options)
+        end_time = time()
+
+        refresh_sec = end_time - start_time
+        LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)

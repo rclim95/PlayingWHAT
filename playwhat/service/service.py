@@ -230,7 +230,7 @@ async def _do_run_poller():
             end_time = time()
             refresh_sec = end_time - start_time
 
-            if playback is not None or playback["is_playing"]:
+            if playback is not None and playback["is_playing"]:
                 # Calculate the duration remaining (including the time it took to refresh the
                 # screen) so we can determine whether we should use Fibonnaci delays or the time
                 # remaining.

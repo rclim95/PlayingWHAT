@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__package__)
 
 _current_options: PainterOptions = None
 
-def display(options: PainterOptions) -> Image.Image:
+def display(options: PainterOptions, force=False) -> Image.Image:
     """
     Takes the image returned by `paint(options: PainterOptions)` and display it on the InkyWHAT
     display
@@ -19,7 +19,7 @@ def display(options: PainterOptions) -> Image.Image:
     global _current_options # pylint: disable=invalid-name,global-statement
 
     # Because it takes a long time to update the InkyWHAT, only update it _if_ we really have to
-    if _current_options == options:
+    if not force and _current_options == options:
         LOGGER.warning("The options passed appears to be the same on screen, ignoring...")
         return
 
@@ -34,14 +34,14 @@ def display(options: PainterOptions) -> Image.Image:
     inky_display.set_image(image)
     inky_display.show()
 
-def display_not_playing() -> Image.Image:
+def display_not_playing(force=False) -> Image.Image:
     """
     Shows the "Not Playing" screen on the InkyWHAT display
     """
     global _current_options # pylint: disable=invalid-name,global-statement
 
     # Because it takes a long time to update the InkyWHAT, only update it _if_ we really have to
-    if _current_options is None:
+    if not force and _current_options is None:
         LOGGER.warning("The \"Not Playing\" screen is already shown, ignoring...")
         return
 

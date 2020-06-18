@@ -230,7 +230,7 @@ async def _do_run_poller():
             end_time = time()
             refresh_sec = end_time - start_time
 
-            if playback is not None:
+            if playback is not None or playback["is_playing"]:
                 # Calculate the duration remaining (including the time it took to refresh the
                 # screen) so we can determine whether we should use Fibonnaci delays or the time
                 # remaining.
@@ -265,8 +265,8 @@ async def _do_run_poller():
                 else:
                     delay_sec = next_fibonnaci
             else:
-                # The user isn't playing anything. We'll check again in 60 seconds.
-                delay_sec = 60.0
+                # The user isn't playing anything. We'll check again in 30 seconds.
+                delay_sec = 30.0
         except Exception: # pylint: disable=broad-except
             LOGGER.exception("Failed to update InkyWHAT with latest playback info from Spotify")
         finally:

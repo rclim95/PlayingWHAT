@@ -61,19 +61,19 @@ def paint_not_playing() -> Image.Image:
 
     # Figure out how to draw the context text, which should appear underneath the heading text,
     # also centered.
-    content_text = "Play some music on Spotify, and we'll\nshow what's playing on here"
+    content_text = "Play some music on Spotify, and we'll\nshow what's playing on here. :)"
     content_font = ImageFont.truetype(
         os.path.join(PATH_ASSET_FONT, "open-sans.ttf"),
         size=NOT_PLAYING_CONTENT_POINT_SIZE)
     content_width, _ = content_font.getsize_multiline(content_text)
     content_x = (image.width - content_width) // 2
     content_y = PADDING + music_height + NOT_PLAYING_ICON_SPACING + heading_height + \
-        NOT_PLAYING_ICON_SPACING
+        NOT_PLAYING_HEADING_SPACING
 
     # Now draw the content text
     draw.multiline_text(
         (content_x, content_y), content_text,
-        align="center", font=content_font, fill=InkyWHAT.BLACK
+        align="center", font=content_font, fill=InkyWHAT.RED
     )
 
     return image

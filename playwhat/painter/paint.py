@@ -1,10 +1,15 @@
 """Provide functions that's responsible for doing the actual painting/drawing on the display"""
 
+import re
+
 from inky import InkyWHAT
 from PIL import Image, ImageDraw, ImageFont
+
 from playwhat.painter import utils
 from playwhat.painter.constants import *
 from playwhat.painter.types import *
+
+_CJK_REGEX = re.compile(u"([\u3300-\u33ff\ufe30-\ufe4f\uf900-\ufaff\U0002f800-\U0002fa1f\u30a0-\u30ff\u2e80-\u2eff\u4e00-\u9fff\u3400-\u4dbf\U00020000-\U0002a6df\U0002a700-\U0002b73f\U0002b740-\U0002b81f\U0002b820-\U0002ceaf]+)")
 
 def paint(options: PainterOptions) -> Image.Image:
     """
@@ -138,9 +143,7 @@ def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: Paint
         album_art_y = CONTENT_START_Y
         image.paste(album_art, (album_art_x, album_art_y))
 
-    title_font = ImageFont.truetype(
-        os.path.join(PATH_ASSET_FONT, "open-sans.ttf"),
-        size=CONTENT_TRACK_POINT_SIZE)
+    title_font = _get_font(options.track_name, CONTENT_TRACK_POINT_SIZE)
 
     # Now figure out how to write the track title (wrapping and ellipsizing as needed)
     max_width = image.width - PADDING - (PADDING + album_art_width + CONTENT_ALBUM_ART_INFO_SPACING)
@@ -173,7 +176,7 @@ def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: Paint
     info_height += _paint_content_info(
         image=image,
         draw=draw,
-        font=info_font,
+        font=_get_font(options.artist_name, CONTENT_INFO_POINT_SIZE),
         info_x=title_x,
         info_bottom_y=album_bottom_y - info_height - CONTENT_INFO_LINE_SPACING,
         icon_path=os.path.join(PATH_ASSET_IMAGE, "icon-artist.png"),
@@ -186,7 +189,7 @@ def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: Paint
     _paint_content_info(
         image=image,
         draw=draw,
-        font=info_font,
+        font=_get_font(options.artist_name, CONTENT_INFO_POINT_SIZE),
         info_x=title_x,
         info_bottom_y=album_bottom_y - info_height,
         icon_path=os.path.join(PATH_ASSET_IMAGE, "icon-album.png"),
@@ -275,3 +278,19 @@ def _paint_footer(image: Image.Image, draw: ImageDraw.ImageDraw, options: Painte
             (device_x + + device_width + FOOTER_ICON_NAME_SPACING,
              device_y + ((device_height - device_name_height) // 2) - 2),
             device_name, font=font, fill=InkyWHAT.BLACK)
+
+def _get_font(text: str, size: int, light_variant: bool = False):
+    # Determine if the text contains characters that would require a CJK font to render
+    # it properly (so that it isn't showing mojibake)
+    if _CJK_REGEX.search(text) is not None:
+        if light_variant:
+            font_path = os.path.join(PATH_ASSET_FONT, "noto-sans-cjkjp-light.otf")
+        else:
+            font_path = os.path.join(PATH_ASSET_FONT, "noto-sans-cjkjp.otf")
+    else:
+        if light_variant:
+            font_path = os.path.join(PATH_ASSET_FONT, "open-sans-light.ttf")
+        else:
+            font_path = os.path.join(PATH_ASSET_FONT, "open-sans.ttf")
+
+    return ImageFont.truetype(font_path, size)

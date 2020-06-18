@@ -168,10 +168,10 @@ def wrap_and_ellipsize_text(text: str,
                 # everything after last_space, so that we properly ellipsize our message, should
                 # we have more lines that would've been added (but couldn't because then we would
                 # exceed our max_lines).
-                return result + ellipsize_text(line + text[last_space:], font, max_width)
+                return result + ellipsize_text(line + text[last_space:], font, max_width).strip()
 
             # We haven't reached our maximum line. Append a new line and continue.
-            result += line + "\n"
+            result += line.strip() + "\n"
 
             # Now we need to write the characters starting from last_space up to index and reset
             # line_width to accomodate for the remaining text we've just inserted in the new line

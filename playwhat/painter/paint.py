@@ -9,6 +9,7 @@ from playwhat.painter import utils
 from playwhat.painter.constants import *
 from playwhat.painter.types import *
 
+# Obligatory "Thanks, StackOverflow": https://stackoverflow.com/a/30116125/3145126
 _CJK_REGEX = re.compile(u"([\u3300-\u33ff\ufe30-\ufe4f\uf900-\ufaff\U0002f800-\U0002fa1f\u30a0-\u30ff\u2e80-\u2eff\u4e00-\u9fff\u3400-\u4dbf\U00020000-\U0002a6df\U0002a700-\U0002b73f\U0002b740-\U0002b81f\U0002b820-\U0002ceaf]+)")
 
 def paint(options: PainterOptions) -> Image.Image:

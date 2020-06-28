@@ -190,7 +190,7 @@ def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: Paint
     _paint_content_info(
         image=image,
         draw=draw,
-        font=_get_font(options.artist_name, CONTENT_INFO_POINT_SIZE),
+        font=_get_font(options.album_name, CONTENT_INFO_POINT_SIZE),
         info_x=title_x,
         info_bottom_y=album_bottom_y - info_height,
         icon_path=os.path.join(PATH_ASSET_IMAGE, "icon-album.png"),

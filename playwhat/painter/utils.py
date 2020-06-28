@@ -134,57 +134,36 @@ def wrap_and_ellipsize_text(text: str,
     # Strip out any whitespaces
     text = text.strip()
 
-    result = ""
-    last_space = 0
-    line_count = 1      # The number of lines we've written so far
-    line_start = 0      # The character in text where the line starts.
-    line_width = 0      # The width of all characters in the current line
-    for index, char in enumerate(text):
-        # Keep track of the last whitespace that we have found in the text so we know
-        # where to insert a line break later.
-        if char.isspace():
-            last_space = index
+    # Split up text by word boundaries, i.e., by spaces. Note that to prevent weird issues
+    # with text that may have double spaces (which will result an empty word token), we'll
+    # filter it out.
+    words = list(filter(lambda word: word.strip() != "", text.split()))
 
-        # Measure the width of the character
-        char_width, _ = font.getsize(char)
+    current_line = 1
+    current_line_str = ""
+    output = ""
+    for index, word in enumerate(words):
+        # Will adding this word exceed our max_width?
+        next_output = current_line_str + word
+        output_width, _ = font.getsize(next_output)
+        if output_width > max_width:
+            # Can we insert a line break?
+            if current_line == max_lines:
+                # Nope, this means that we're going to need to truncate this word. To make
+                # sure we're ellipsizing correctly, assume that we're adding the rest of the song
+                # title to the current line.
+                current_line_str += " ".join(words[index + 1:])
+                output += ellipsize_text(current_line_str, font, max_width)
+                return output
 
-        # Will we have enough space to render this character?
-        if max_width - line_width - char_width > 0:
-            # Cool. Add it to the total line width that we've recorded so far.
-            line_width += char_width
+            # We can insert a line break here. Do that, and move our next word there.
+            output += current_line_str + "\n"
+            current_line_str = word + " "
+            current_line += 1
         else:
-            # If we didn't come across a space, then most likely, this is a super long word we're
-            # working with. In that case, let last_space be the current index.
-            if last_space == 0:
-                last_space = index
+            # We're still good. Append it. :)
+            current_line_str += word + " "
 
-            # Nope, we're going to need to introduce a line break somewhere. Capture the line that
-            # we want to flush.
-            line = text[line_start:last_space]
-
-            # Can we write a new line? That is, make sure we haven't reached our maximum line.
-            if line_count == max_lines:
-                # We've reached our maximum line. Ellipsize our last line. Note that include
-                # everything after last_space, so that we properly ellipsize our message, should
-                # we have more lines that would've been added (but couldn't because then we would
-                # exceed our max_lines).
-                return result + ellipsize_text(line + text[last_space:], font, max_width).strip()
-
-            # We haven't reached our maximum line. Append a new line and continue.
-            result += line.strip() + "\n"
-
-            # Now we need to write the characters starting from last_space up to index and reset
-            # line_width to accomodate for the remaining text we've just inserted in the new line
-            # we've created.
-            remaining = text[last_space + 1:index]
-            result += remaining
-            line_width, _ = font.getsize(remaining)
-
-            # The current character we're processing at index is now our new "line_start" index.
-            line_start = index
-            line_count += 1
-
-    # If we've reached this part, that means we were able to fit everything. In that case,
-    # flush out everyhing that remains in our buffer.
-    result += text[line_start:]
-    return result
+    # If we've reached here, then we must've enumerated through all of our words without require
+    # a line break (or the word is so long that it'll need to be ellipsized). In that case, do that.
+    return ellipsize_text(" ".join(words), font, max_width)

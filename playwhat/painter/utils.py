@@ -164,6 +164,15 @@ def wrap_and_ellipsize_text(text: str,
             # We're still good. Append it. :)
             current_line_str += word + " "
 
-    # If we've reached here, then we must've enumerated through all of our words without require
-    # a line break (or the word is so long that it'll need to be ellipsized). In that case, do that.
-    return ellipsize_text(" ".join(words), font, max_width)
+    # If we've reached this far, that means we were able to fit all the words of the track. Depending
+    # on what output and current_line_str is, we may need to do some ellipsizing here.
+    if len(output) == 0 and len(current_line_str) > 0:
+        # That means by the time we were enumerating through all words, we were able fit every word
+        # of the track to our current_line_str without appending to the output. Return
+        # current_line_str in that case, ellipsizing as needed.
+        return ellipsize_text(current_line_str, font, max_width)
+    else:
+        # Otherwise, we had some output and we were able to append the remaining words to
+        # current_line_str without exceeding the max_lines. In that case, append the output and the
+        # current_line_str together.
+        return output + current_line_str

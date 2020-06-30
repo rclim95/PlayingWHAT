@@ -85,6 +85,7 @@ class PainterOptions:
     device_name: str
     device_type: DeviceType
     duration: timedelta
+    is_liked: bool
     is_playing: bool
     is_shuffled: bool
     repeat_status: RepeatStatus

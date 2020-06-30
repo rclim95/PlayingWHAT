@@ -135,6 +135,18 @@ def _paint_header(image: Image.Image, draw: ImageDraw.ImageDraw, options: Painte
         repeat_y = shuffle_y
         image.paste(repeat, (repeat_x, repeat_y))
 
+    # Determine the like state and figure out what icon do we need to draw
+    if options.is_liked:
+        like_icon_path = os.path.join(PATH_ASSET_IMAGE, "icon-heart.png")
+    else:
+        like_icon_path = os.path.join(PATH_ASSET_IMAGE, "icon-heart-outline.png")
+
+    # Finally, draw the heart icon afterwards, before the shuffle icon
+    with Image.open(like_icon_path) as like: # type: Image.image
+        like_x = repeat_x - HEADING_REPEAT_SHUFFLE_SPACING - like.width
+        like_y = shuffle_y
+        image.paste(like, (like_x, like_y))
+
 def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: PainterOptions):
     # Draw the album part
     with utils.get_image(options.album_image_url, resize_dimension=(150, 150)) as album_art:

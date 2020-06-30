@@ -68,6 +68,7 @@ class UpdateDisplayMessage:
                  device_name: str,
                  device_type: int,
                  duration_sec: int,
+                 is_liked: bool,
                  is_playing: bool,
                  is_shuffled: bool,
                  repeat_status: int,
@@ -81,6 +82,7 @@ class UpdateDisplayMessage:
         self.device_name = device_name
         self.device_type = device_type
         self.duration_sec = duration_sec
+        self.is_liked = is_liked
         self.is_playing = is_playing
         self.is_shuffled = is_shuffled
         self.repeat_status = repeat_status
@@ -98,6 +100,7 @@ class UpdateDisplayMessage:
             message["device_name"],
             message["device_type"],
             message["duration_sec"],
+            message["is_liked"],
             message["is_playing"],
             message["is_shuffled"],
             message["repeat_status"],
@@ -116,6 +119,7 @@ class UpdateDisplayMessage:
             opts.device_name,
             opts.device_type,
             int(opts.duration.total_seconds()),
+            opts.is_liked,
             opts.is_playing,
             opts.is_shuffled,
             opts.repeat_status,
@@ -133,6 +137,7 @@ class UpdateDisplayMessage:
             "device_name": self.device_name,
             "device_type": self.device_type,
             "duration_sec": self.duration_sec,
+            "is_liked": self.is_liked,
             "is_playing": self.is_playing,
             "is_shuffled": self.is_shuffled,
             "repeat_status": self.repeat_status,
@@ -150,6 +155,7 @@ class UpdateDisplayMessage:
             self.device_name,
             self.device_type,
             timedelta(seconds=self.duration_sec),
+            self.is_liked,
             self.is_playing,
             self.is_shuffled,
             self.repeat_status,

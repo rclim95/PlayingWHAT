@@ -160,7 +160,7 @@ def _handle_refresh_message():
         _user = api_client.me()
 
     # Let's update!
-    _update_display(_user, playback)
+    _update_display(api_client, _user, playback)
     return True
 
 async def _on_client_connected(reader: StreamReader, writer: StreamWriter):
@@ -226,7 +226,7 @@ async def _do_run_poller():
             # so that we take that into consideration while figuring out how much longer until
             # the user has finished the track (assuming no skipping).
             start_time = time()
-            _update_display(_user, playback)
+            _update_display(api_client, _user, playback)
             end_time = time()
             refresh_sec = end_time - start_time
 
@@ -286,7 +286,7 @@ def _fibonnaci():
         b = c
         yield c
 
-def _update_display(current_user, playback):
+def _update_display(api_client: spotipy.Spotify, current_user, playback):
     if playback is None:
         LOGGER.info("The user is not playing anything.")
 
@@ -307,9 +307,12 @@ def _update_display(current_user, playback):
             LOGGER.warning("The current item is not a track object. Tracks are only supported.")
             return False
 
+        # Check to see if the user likes this track
+        track = playback["item"]
+        is_liked = api_client.current_user_saved_tracks_contains([track["id"]])[0]
+
         # Build the PainterOptions that'll pass to the painter and display it
         device = playback["device"]
-        track = playback["item"]
         album = track["album"]
         artists = track["artists"]
         options = PainterOptions(
@@ -319,6 +322,7 @@ def _update_display(current_user, playback):
             device_name=device["name"],
             device_type=DeviceType.from_api(device["type"]),
             duration=timedelta(milliseconds=track["duration_ms"]),
+            is_liked=is_liked,
             is_playing=True,
             is_shuffled=playback["shuffle_state"],
             repeat_status=RepeatStatus.from_api(playback["repeat_state"]),

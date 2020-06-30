@@ -12,7 +12,7 @@ import yaml
 LOGGER = logging.getLogger(__package__)
 
 # Define the Spotify scopes that's needed by PlayingWHAT to work
-API_SCOPES = ["user-read-recently-played", "user-read-playback-state"]
+API_SCOPES = ["user-library-read", "user-read-playback-state"]
 
 # Define the available environment variables keys that should exist in the .env file
 ENV_ENV_FILE = "ENV_FILE"

@@ -22,4 +22,4 @@ the Inky wHAT display (thanks to the [official Inky Python library](https://gith
 
 ## License
 
-This project is licensed under the MIT License. For more inforation, check out the [`LICENSE.md`](LICENSE.md) file that's included in the root of this repository.
+This project is licensed under the MIT License. For more information, check out the [`LICENSE.md`](LICENSE.md) file that's included in the root of this repository.

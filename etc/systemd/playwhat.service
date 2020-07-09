@@ -4,13 +4,13 @@ After=network.target
 
 [Service]
 Type=forking
-User=richard
-Group=richard
+User=pi
+Group=pi
 PIDFile=/run/playwhat/playwhat.pid
-ExecStart=/opt/PlayingWHAT/src/.venv/bin/python3 -m playwhat.service
+ExecStart=python3 -m playwhat.service
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
-WorkingDirectory=/opt/PlayingWHAT/src
+WorkingDirectory=/opt/PlayingWHAT/git
 ConfigurationDirectory=playwhat
 RuntimeDirectory=playwhat
 LogsDirectory=playwhat

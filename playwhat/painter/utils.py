@@ -152,7 +152,7 @@ def wrap_and_ellipsize_text(text: str,
                 # Nope, this means that we're going to need to truncate this word. To make
                 # sure we're ellipsizing correctly, assume that we're adding the rest of the song
                 # title to the current line.
-                current_line_str += " ".join(words[index + 1:])
+                current_line_str += " ".join(words[index:])
                 output += ellipsize_text(current_line_str, font, max_width)
                 return output
 

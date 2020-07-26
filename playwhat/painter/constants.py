@@ -23,8 +23,12 @@ HEADING_LOGO_TEXT_SPACING: int = 10
 # The amount of spacing between the repeat and shuffle icon.
 HEADING_REPEAT_SHUFFLE_SPACING: int = 5
 
-# The amount of spacing after the heading to place the content
-CONTENT_START_Y = PADDING + 60
+# The album dimension
+CONTENT_ALBUM_DIMENSIONS = (150, 150)
+
+# The amount of spacing after the heading to place the content. If set to None, then the content will
+# be aligned to the middle of the InkyWHAT screen automatically.
+CONTENT_START_Y = None
 
 # The point size of the track title
 CONTENT_TRACK_POINT_SIZE: int = 22

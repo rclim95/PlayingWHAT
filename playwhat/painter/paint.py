@@ -148,17 +148,26 @@ def _paint_header(image: Image.Image, draw: ImageDraw.ImageDraw, options: Painte
         image.paste(like, (like_x, like_y))
 
 def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: PainterOptions):
+    # Figure out where we should start drawing the album art (and title). We're going to try
+    # to center it on the screen of the InkyWHAT.
+    content_y = None
+    if CONTENT_START_Y is None:
+        content_y = (image.height - CONTENT_ALBUM_DIMENSIONS[1]) // 2
+    else:
+        content_y = CONTENT_START_Y
+
     # Draw the album part. Note that if no album art is provided, we'll provide a generic one.
     if options.album_image_url is None:
         album_art = Image.open(os.path.join(PATH_ASSET_IMAGE, "album-generic.png"))
     else:
-        album_art = utils.get_image(options.album_image_url, resize_dimension=(150, 150))
+        album_art = utils.get_image(options.album_image_url, 
+                                    resize_dimension=CONTENT_ALBUM_DIMENSIONS)
 
     with album_art:
         album_art_width = album_art.width
         album_art_height = album_art.height
         album_art_x = PADDING
-        album_art_y = CONTENT_START_Y
+        album_art_y = content_y
         image.paste(album_art, (album_art_x, album_art_y))
 
     title_font = _get_font(options.track_name, CONTENT_TRACK_POINT_SIZE)
@@ -167,7 +176,7 @@ def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: Paint
     max_width = image.width - PADDING - (PADDING + album_art_width + CONTENT_ALBUM_ART_INFO_SPACING)
     title_wrapped = utils.wrap_and_ellipsize_text(options.track_name, title_font, max_width, 2)
     title_x = PADDING + album_art_width + CONTENT_ALBUM_ART_INFO_SPACING
-    title_y = CONTENT_START_Y
+    title_y = content_y
     draw.multiline_text((title_x, title_y), title_wrapped, fill=InkyWHAT.RED, font=title_font)
 
     info_font = ImageFont.truetype(

@@ -9,9 +9,6 @@ from playwhat.painter import utils
 from playwhat.painter.constants import *
 from playwhat.painter.types import *
 
-# Obligatory "Thanks, StackOverflow": https://stackoverflow.com/a/30116125/3145126
-_CJK_REGEX = re.compile(u"([\u3300-\u33ff\ufe30-\ufe4f\uf900-\ufaff\U0002f800-\U0002fa1f\u30a0-\u30ff\u2e80-\u2eff\u4e00-\u9fff\u3400-\u4dbf\U00020000-\U0002a6df\U0002a700-\U0002b73f\U0002b740-\U0002b81f\U0002b820-\U0002ceaf]+)")
-
 def paint(options: PainterOptions) -> Image.Image:
     """
     Paints the "Now Playing" screen based off the options passed to the `options` parameter and
@@ -311,7 +308,7 @@ def _paint_footer(image: Image.Image, draw: ImageDraw.ImageDraw, options: Painte
 def _get_font(text: str, size: int, light_variant: bool = False):
     # Determine if the text contains characters that would require a CJK font to render
     # it properly (so that it isn't showing mojibake)
-    if _CJK_REGEX.search(text) is not None:
+    if utils.has_cjk_text(text):
         if light_variant:
             font_path = os.path.join(PATH_ASSET_FONT, "noto-sans-cjkjp-light.otf")
         else:

@@ -336,6 +336,8 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
             user_image_url=current_user["images"][0]["url"]
         )
 
+        LOGGER.debug("Updating display (%s by %s)", options.track_name, options.album_name)
+
         start_time = time()
         display(options)
         end_time = time()

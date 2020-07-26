@@ -4,6 +4,7 @@ from hashlib import sha256
 from io import BytesIO
 import logging
 import os
+import re
 from PIL import Image, ImageFont
 import requests
 from playwhat.painter.constants import PATH_IMAGE_CACHE
@@ -11,6 +12,13 @@ from playwhat.painter.types import Dimension
 
 # The logger for this module
 LOGGER = logging.getLogger(__package__)
+
+# A regex that can be used for determining if text is CJK. Obligatory "Thanks, StackOverflow":
+# https://stackoverflow.com/a/30116125/3145126
+_CJK_REGEX = re.compile(
+    u"([\u3300-\u33ff\ufe30-\ufe4f\uf900-\ufaff\U0002f800-\U0002fa1f\u30a0-\u30ff\u2e80-\u2eff"
+    u"\u4e00-\u9fff\u3400-\u4dbf\U00020000-\U0002a6df\U0002a700-\U0002b73f\U0002b740-\U0002b81f"
+    u"\U0002b820-\U0002ceaf]+)")
 
 class ImageCacheLibrary:
     """
@@ -69,6 +77,27 @@ class ImageCacheLibrary:
         # saved it already)
         return sha256(url.encode("utf-8")).hexdigest()
 
+def ellipsize_text(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
+    """
+    Ellipsize the text if needed, accomodating for the `max_width` speciifed
+    """
+    # If the text is within max_width, just return the text.
+    text_width, _ = font.getsize(text)
+    if text_width <= max_width:
+        return text
+
+    # Otherwise, we'll need to do some ellipsizing.
+    chars_end = 1
+    while True:
+        text_width, _ = font.getsize(text[:chars_end] + "...")
+        if text_width < max_width:
+            # Keep incrementing--we can fit more characters!
+            chars_end += 1
+            continue
+
+        # All right, seems like we've reached our limit.
+        return text[:chars_end - 1] + "..."
+
 def get_image(url: str, resize_dimension: Dimension = None) -> Image.Image:
     """
     Gets an image from a URL that'll be quantizied (and optionally, resized) for the InkyWHAT
@@ -78,6 +107,13 @@ def get_image(url: str, resize_dimension: Dimension = None) -> Image.Image:
     cache = ImageCacheLibrary(prefix=PATH_IMAGE_CACHE)
     with cache.get_image(url) as image: # type: Image.Image
         return resize_and_quantize_to_what_display(image, resize_dimension)
+
+def has_cjk_text(text: str):
+    """
+    Returns `True` if `text` contains Chinese, Japanese, or Korean text (and therefore, a CJK-
+    compatible font should be used to display the text)
+    """
+    return _CJK_REGEX.search(text) is not None
 
 def resize_and_quantize_to_what_display(image: Image.Image,
                                         resize_dimension: Dimension = None) -> Image.Image:
@@ -100,27 +136,6 @@ def resize_and_quantize_to_what_display(image: Image.Image,
             image = image.resize(resize_dimension, resample=Image.LANCZOS)
 
         return image.convert("RGB").quantize(palette=palette)
-
-def ellipsize_text(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
-    """
-    Ellipsize the text if needed, accomodating for the `max_width` speciifed
-    """
-    # If the text is within max_width, just return the text.
-    text_width, _ = font.getsize(text)
-    if text_width <= max_width:
-        return text
-
-    # Otherwise, we'll need to do some ellipsizing.
-    chars_end = 1
-    while True:
-        text_width, _ = font.getsize(text[:chars_end] + "...")
-        if text_width < max_width:
-            # Keep incrementing--we can fit more characters!
-            chars_end += 1
-            continue
-
-        # All right, seems like we've reached our limit.
-        return text[:chars_end - 1] + "..."
 
 def wrap_and_ellipsize_text(text: str,
                             font: ImageFont.ImageFont,

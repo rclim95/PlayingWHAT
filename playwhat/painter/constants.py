@@ -3,7 +3,7 @@
 import os
 
 # The padding size between all areas of the painter
-PADDING: int = 20
+PADDING: int = 10
 
 # The path to where all image assets are
 PATH_ASSET_IMAGE: str = os.path.join(os.path.dirname(__file__), "assets", "images")

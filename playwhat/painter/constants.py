@@ -26,8 +26,8 @@ HEADING_REPEAT_SHUFFLE_SPACING: int = 5
 # The album dimension
 CONTENT_ALBUM_DIMENSIONS = (150, 150)
 
-# The amount of spacing after the heading to place the content. If set to None, then the content will
-# be aligned to the middle of the InkyWHAT screen automatically.
+# The amount of spacing after the heading to place the content. If set to None, then the content 
+# will be aligned to the middle of the InkyWHAT screen automatically.
 CONTENT_START_Y = None
 
 # The point size of the track title
@@ -37,7 +37,7 @@ CONTENT_TRACK_POINT_SIZE: int = 22
 CONTENT_INFO_POINT_SIZE: int = 16
 
 # The amount of spacing to put for the text that is shown next to the album art
-CONTENT_ALBUM_ART_INFO_SPACING: int = 15
+CONTENT_ALBUM_ART_INFO_SPACING: int = 10
 
 # The amount of spacing that exists between the track's title and the information to show
 # underneat the track.

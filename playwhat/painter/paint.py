@@ -160,7 +160,7 @@ def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: Paint
     if options.album_image_url is None:
         album_art = Image.open(os.path.join(PATH_ASSET_IMAGE, "album-generic.png"))
     else:
-        album_art = utils.get_image(options.album_image_url, 
+        album_art = utils.get_image(options.album_image_url,
                                     resize_dimension=CONTENT_ALBUM_DIMENSIONS)
 
     with album_art:
@@ -173,8 +173,10 @@ def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: Paint
     title_font = _get_font(options.track_name, CONTENT_TRACK_POINT_SIZE)
 
     # Now figure out how to write the track title (wrapping and ellipsizing as needed)
-    max_width = image.width - PADDING - (PADDING + album_art_width + CONTENT_ALBUM_ART_INFO_SPACING)
-    title_wrapped = utils.wrap_and_ellipsize_text(options.track_name, title_font, max_width, 2)
+    max_width = image.width - ((PADDING * 2) + album_art_width + CONTENT_ALBUM_ART_INFO_SPACING)
+    title_wrapped = utils.wrap_and_ellipsize_text(options.track_name, title_font,
+                                                  max_width=max_width,
+                                                  max_lines=2)
     title_x = PADDING + album_art_width + CONTENT_ALBUM_ART_INFO_SPACING
     title_y = content_y
     draw.multiline_text((title_x, title_y), title_wrapped, fill=InkyWHAT.RED, font=title_font)

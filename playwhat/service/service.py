@@ -307,18 +307,23 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
             LOGGER.warning("The current item is not a track object. Tracks are only supported.")
             return False
 
-        # Check to see if the user likes this track
+        # Check to see if the user likes this track. Note that if the user is playing a local track
+        # then assume the track is not liked.
         track = playback["item"]
-        is_liked = api_client.current_user_saved_tracks_contains([track["id"]])[0]
+        is_local = track["is_local"]
+        if is_local:
+            is_liked = False
+        else:
+            is_liked = api_client.current_user_saved_tracks_contains([track["id"]])[0]
 
         # Build the PainterOptions that'll pass to the painter and display it
         device = playback["device"]
         album = track["album"]
         artists = track["artists"]
         options = PainterOptions(
-            artist_name="; ".join(map(lambda artist: artist["name"], artists)),
+            artist_name=", ".join(map(lambda artist: artist["name"], artists)),
             album_name=album["name"],
-            album_image_url=album["images"][0]["url"],
+            album_image_url=None if is_local else album["images"][0]["url"],
             device_name=device["name"],
             device_type=DeviceType.from_api(device["type"]),
             duration=timedelta(milliseconds=track["duration_ms"]),

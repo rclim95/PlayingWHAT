@@ -148,8 +148,13 @@ def _paint_header(image: Image.Image, draw: ImageDraw.ImageDraw, options: Painte
         image.paste(like, (like_x, like_y))
 
 def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: PainterOptions):
-    # Draw the album part
-    with utils.get_image(options.album_image_url, resize_dimension=(150, 150)) as album_art:
+    # Draw the album part. Note that if no album art is provided, we'll provide a generic one.
+    if options.album_image_url is None:
+        album_art = Image.open(os.path.join(PATH_ASSET_IMAGE, "album-generic.png"))
+    else:
+        album_art = utils.get_image(options.album_image_url, resize_dimension=(150, 150))
+
+    with album_art:
         album_art_width = album_art.width
         album_art_height = album_art.height
         album_art_x = PADDING

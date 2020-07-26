@@ -161,6 +161,7 @@ def wrap_and_ellipsize_text(text: str,
         # Will adding this word exceed our max_width?
         next_output = current_line_str + word
         output_width, _ = font.getsize(next_output)
+
         if output_width > max_width:
             # Can we insert a line break?
             if current_line == max_lines:
@@ -169,6 +170,7 @@ def wrap_and_ellipsize_text(text: str,
                 # title to the current line.
                 current_line_str += " ".join(words[index:])
                 output += ellipsize_text(current_line_str, font, max_width)
+
                 return output
 
             # We can insert a line break here. Do that, and move our next word there.
@@ -190,4 +192,4 @@ def wrap_and_ellipsize_text(text: str,
         # Otherwise, we had some output and we were able to append the remaining words to
         # current_line_str without exceeding the max_lines. In that case, append the output and the
         # current_line_str together.
-        return (output + current_line_str).strip()
+        return output + ellipsize_text(current_line_str.strip(), font, max_width)

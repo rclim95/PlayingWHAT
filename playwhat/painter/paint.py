@@ -42,42 +42,68 @@ def paint_not_playing() -> Image.Image:
     ))
     draw = ImageDraw.Draw(image)
 
-    # Draw the music icon
-    with Image.open(os.path.join(PATH_ASSET_IMAGE, "icon-music.png")) as music:
-        music_width, music_height = music.width, music.height
-        image.paste(music, ((image.width - music_width) // 2, PADDING))
+    max_width = image.width - (PADDING * 2)
 
-    # Figure out how to draw the heading text, which should appear beneath the music icon, also
-    # centered.
-    heading_text = "Nothing's Playing\nRight Now"
+    # Get the music icon that'll be shown above the header
+    music_icon = Image.open(os.path.join(PATH_ASSET_IMAGE, "icon-music.png"))
+
+    # Layout out heading
     heading_font = ImageFont.truetype(
         os.path.join(PATH_ASSET_FONT, "open-sans.ttf"),
         size=NOT_PLAYING_HEADING_POINT_SIZE)
-    heading_width, heading_height = heading_font.getsize_multiline(heading_text)
-    heading_x = (image.width - heading_width) // 2
-    heading_y = PADDING + music_height + NOT_PLAYING_ICON_SPACING
+    heading_text = utils.wrap_and_ellipsize_text(
+        text="It's Quiet On Spotify...",
+        font=heading_font,
+        max_width=max_width,
+        max_lines=2)
+    heading_text_width, heading_text_height = heading_font.getsize_multiline(heading_text)
 
-    # Now draw the heading text
-    draw.multiline_text(
-        (heading_x, heading_y), heading_text,
-        align="center", font=heading_font, fill=InkyWHAT.RED)
-
-    # Figure out how to draw the context text, which should appear underneath the heading text,
-    # also centered.
-    content_text = "Play some music on Spotify, and we'll\nshow what's playing on here. :)"
+    # Layout our content
     content_font = ImageFont.truetype(
         os.path.join(PATH_ASSET_FONT, "open-sans.ttf"),
         size=NOT_PLAYING_CONTENT_POINT_SIZE)
-    content_width, _ = content_font.getsize_multiline(content_text)
-    content_x = (image.width - content_width) // 2
-    content_y = PADDING + music_height + NOT_PLAYING_ICON_SPACING + heading_height + \
-        NOT_PLAYING_HEADING_SPACING
+    content_text = utils.wrap_and_ellipsize_text(
+        text="Play some music on Spotify, and we will show you what is playing on here. :)",
+        font=content_font,
+        max_width=max_width,
+        max_lines=2)
+    content_text_width, content_text_height = content_font.getsize_multiline(content_text)
 
-    # Now draw the content text
-    draw.multiline_text(
-        (content_x, content_y), content_text,
-        align="center", font=content_font, fill=InkyWHAT.RED
-    )
+    # Figure out where the y-start of our music icon should be drawn. This is dependent on
+    #   1) The music icon's height
+    #   2) The text height of the heading
+    #   3) The text height of the content
+    #   4) The padding between the music icon, heading, and content
+    y_start = (image.height - (music_icon.height + \
+              NOT_PLAYING_ICON_SPACING + \
+              heading_text_height + \
+              NOT_PLAYING_HEADING_SPACING + \
+              content_text_height)) // 2
+
+    # Subtracting 10 from the initial y_start so that it's visually centered (this doesn't make it
+    # vertically centered, but at least it looks like it's centered, psychologically-speaking)
+    y_start -= 10
+
+    # Now start drawing the music icon
+    music_x = (image.width - music_icon.width) // 2
+    music_y = y_start
+    image.paste(music_icon, (music_x, music_y))
+
+    # Then start drawing the header
+    heading_x = (image.width - heading_text_width) // 2
+    heading_y = music_y + music_icon.height + NOT_PLAYING_ICON_SPACING
+    draw.multiline_text((heading_x, heading_y), heading_text,
+                        font=heading_font,
+                        align="center",
+                        fill=InkyWHAT.RED)
+
+    # And finally, the content
+    content_x = (image.width - content_text_width) // 2
+    content_y = heading_y + heading_text_height + NOT_PLAYING_HEADING_SPACING
+    draw.multiline_text((content_x, content_y), content_text,
+                        font=content_font,
+                        align="center",
+                        fill=InkyWHAT.RED)
 
     return image
 

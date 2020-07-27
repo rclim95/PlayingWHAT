@@ -277,11 +277,7 @@ def _paint_footer(image: Image.Image, draw: ImageDraw.ImageDraw, options: Painte
         # Create a circular image mask so that we can apply it to the user's avatar
         circle_mask = Image.new(mode="1", size=(avatar_image_width, avatar_image_height))
         circle_mask_draw = ImageDraw.Draw(circle_mask)
-        circle_mask_draw.ellipse(
-            [(0, 0), (circle_mask.width, circle_mask.height)],
-            fill=1,
-            outline=1,
-            width=1)
+        circle_mask_draw.ellipse([(0, 0), (circle_mask.width, circle_mask.height)], fill=1)
 
         image.paste(avatar_image, (avatar_image_x, avatar_image_y), mask=circle_mask)
 

@@ -52,7 +52,7 @@ def paint_not_playing() -> Image.Image:
         os.path.join(PATH_ASSET_FONT, "open-sans.ttf"),
         size=NOT_PLAYING_HEADING_POINT_SIZE)
     heading_text = utils.wrap_and_ellipsize_text(
-        text="It's Quiet On Spotify...",
+        text="There Is Nothing Playing",
         font=heading_font,
         max_width=max_width,
         max_lines=2)

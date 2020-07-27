@@ -93,6 +93,7 @@ def _do_authenticate(args): # pylint: disable=unused-argument
         "User token saved to \"%s\" successfully.",
         os.getenv(playwhat.ENV_CREDENTIAL_CACHE_PATH)
     )
+    LOGGER.info("Run 'systemctl reload playwhat' for the changes to take effect.")
 
 def _do_refresh(args): # pylint: disable=unused-argument
     async def do_refresh():

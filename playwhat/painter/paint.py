@@ -1,7 +1,4 @@
 """Provide functions that's responsible for doing the actual painting/drawing on the display"""
-
-import re
-
 from inky import InkyWHAT
 from PIL import Image, ImageDraw, ImageFont
 

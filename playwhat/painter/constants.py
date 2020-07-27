@@ -26,7 +26,7 @@ HEADING_REPEAT_SHUFFLE_SPACING: int = 5
 # The album dimension
 CONTENT_ALBUM_DIMENSIONS = (150, 150)
 
-# The amount of spacing after the heading to place the content. If set to None, then the content 
+# The amount of spacing after the heading to place the content. If set to None, then the content
 # will be aligned to the middle of the InkyWHAT screen automatically.
 CONTENT_START_Y = None
 

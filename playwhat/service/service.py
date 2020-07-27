@@ -26,7 +26,7 @@ from playwhat.service.messages import DefaultHandler, \
 
 _server: AbstractServer = None
 _poller: Task = None
-_user = None
+_user = None # pylint: disable=invalid-name
 
 async def start():
     """Starts the service"""
@@ -43,7 +43,7 @@ async def start():
 
 def reload():
     """Reloads the configuration for the service"""
-    global _user
+    global _user # pylint: disable=global-statement,invalid-name
 
     # Setup the logging again
     LOGGER.info("Reloading logging information")
@@ -59,8 +59,8 @@ def reload():
     LOGGER.debug("SPOTIFY_CLIENT_SECRET = %s", "*" * len(os.getenv(playwhat.ENV_CLIENT_SECRET)))
     LOGGER.debug("SPOTIFY_USERNAME = %s", os.getenv(playwhat.ENV_USERNAME))
 
-    # Reset the _user variable, so that the next time we're polling Spotify, we get fresh information
-    # about the user logged in
+    # Reset the _user variable, so that the next time we're polling Spotify, we get fresh
+    # information about the user logged in
     _user = None
 
     # Success!
@@ -141,7 +141,7 @@ async def _handle_request(reader: StreamReader, writer: StreamWriter):
     writer.close()
 
 def _handle_refresh_message():
-    global _user
+    global _user # pylint: disable=global-statement,invalid-name
 
     # Communicate with the Spotify API and start getting information about their
     # currently played track
@@ -296,7 +296,6 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
 
         refresh_sec = end_time - start_time
         LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)
-        return True
     else:
         current_item = playback["item"]
         if current_item is None:

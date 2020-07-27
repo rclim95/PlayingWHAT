@@ -268,7 +268,7 @@ def _paint_content_info(image: Image.Image, draw: ImageDraw.ImageDraw, font: Ima
 
 def _paint_footer(image: Image.Image, draw: ImageDraw.ImageDraw, options: PainterOptions):
     # Draw the user's icon
-    with utils.get_image(options.user_image_url, (30, 30)) as avatar_image:
+    with utils.get_image(options.user_image_url, (40, 40)) as avatar_image:
         avatar_image_width = avatar_image.width
         avatar_image_height = avatar_image.height
         avatar_image_x = PADDING

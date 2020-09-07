@@ -309,50 +309,52 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
 
         refresh_sec = end_time - start_time
         LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)
+        return True
+
+    current_item = playback["item"]
+    if current_item is None:
+        LOGGER.warning("The current item is not available. Is the user in private mode?")
+        return False
+
+    if current_item["type"] != "track":
+        LOGGER.warning("The current item is not a track object. Tracks are only supported.")
+        return False
+
+    # Check to see if the user likes this track. Note that if the user is playing a local track
+    # then assume the track is not liked.
+    track = playback["item"]
+    is_local = track["is_local"]
+    if is_local:
+        is_liked = False
     else:
-        current_item = playback["item"]
-        if current_item is None:
-            LOGGER.warning("The current item is not available. Is the user in private mode?")
-            return False
+        is_liked = api_client.current_user_saved_tracks_contains([track["id"]])[0]
 
-        if current_item["type"] != "track":
-            LOGGER.warning("The current item is not a track object. Tracks are only supported.")
-            return False
+    # Build the PainterOptions that'll pass to the painter and display it
+    device = playback["device"]
+    album = track["album"]
+    artists = track["artists"]
+    options = PainterOptions(
+        artist_name=", ".join(map(lambda artist: artist["name"], artists)),
+        album_name=album["name"],
+        album_image_url=None if is_local else album["images"][0]["url"],
+        device_name=device["name"],
+        device_type=DeviceType.from_api(device["type"]),
+        duration=timedelta(milliseconds=track["duration_ms"]),
+        is_liked=is_liked,
+        is_playing=True,
+        is_shuffled=playback["shuffle_state"],
+        repeat_status=RepeatStatus.from_api(playback["repeat_state"]),
+        track_name=track["name"],
+        user_name=current_user["display_name"],
+        user_image_url=current_user["images"][0]["url"]
+    )
 
-        # Check to see if the user likes this track. Note that if the user is playing a local track
-        # then assume the track is not liked.
-        track = playback["item"]
-        is_local = track["is_local"]
-        if is_local:
-            is_liked = False
-        else:
-            is_liked = api_client.current_user_saved_tracks_contains([track["id"]])[0]
+    LOGGER.debug("Updating display (%s by %s)", options.track_name, options.album_name)
 
-        # Build the PainterOptions that'll pass to the painter and display it
-        device = playback["device"]
-        album = track["album"]
-        artists = track["artists"]
-        options = PainterOptions(
-            artist_name=", ".join(map(lambda artist: artist["name"], artists)),
-            album_name=album["name"],
-            album_image_url=None if is_local else album["images"][0]["url"],
-            device_name=device["name"],
-            device_type=DeviceType.from_api(device["type"]),
-            duration=timedelta(milliseconds=track["duration_ms"]),
-            is_liked=is_liked,
-            is_playing=True,
-            is_shuffled=playback["shuffle_state"],
-            repeat_status=RepeatStatus.from_api(playback["repeat_state"]),
-            track_name=track["name"],
-            user_name=current_user["display_name"],
-            user_image_url=current_user["images"][0]["url"]
-        )
+    start_time = time()
+    display(options)
+    end_time = time()
 
-        LOGGER.debug("Updating display (%s by %s)", options.track_name, options.album_name)
-
-        start_time = time()
-        display(options)
-        end_time = time()
-
-        refresh_sec = end_time - start_time
-        LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)
+    refresh_sec = end_time - start_time
+    LOGGER.debug("Refreshing the InkyWHAT screen took %0.0f seconds", refresh_sec)
+    return True

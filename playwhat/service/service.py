@@ -102,6 +102,19 @@ def _create_client() -> spotipy.Spotify:
         )
         return None
 
+    # Refresh the token, if needed
+    if oauth_manager.is_token_expired(user_token):
+        LOGGER.info("The current user token has expired. Refreshing...")
+
+        # Get the cached token information and use that to refresh the user token
+        cached_token = oauth_manager.get_cached_token()
+        if cached_token is None:
+            LOGGER.warning("A cached user token could not be found. The user token won't be "
+                           "refreshed through Spotify's API.")
+        else:
+            oauth_manager.refresh_access_token(cached_token["refresh_token"])
+            LOGGER.info("Successfully refreshed the current user token.")
+
     return spotipy.Spotify(auth=user_token, oauth_manager=oauth_manager)
 
 async def _handle_request(reader: StreamReader, writer: StreamWriter):

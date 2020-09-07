@@ -111,9 +111,15 @@ def _create_client() -> spotipy.Spotify:
         if cached_token is None:
             LOGGER.warning("A cached user token could not be found. The user token won't be "
                            "refreshed through Spotify's API.")
-        else:
-            oauth_manager.refresh_access_token(cached_token["refresh_token"])
-            LOGGER.info("Successfully refreshed the current user token.")
+            LOGGER.info(
+                "Please authenticate with the Spotify API at least once by running the "
+                "following command:\n"
+                "$ python3 -m playwhat.console auth <spotify-username>"
+            )
+            return None
+
+        oauth_manager.refresh_access_token(cached_token["refresh_token"])
+        LOGGER.info("Successfully refreshed the current user token.")
 
     return spotipy.Spotify(auth=user_token, oauth_manager=oauth_manager)
 

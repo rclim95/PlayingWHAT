@@ -353,7 +353,7 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
             album_image_url=show["images"][0]["url"],
             device_name=device["name"],
             device_type=DeviceType.from_api(device["type"]),
-            duration=timedelta(milliseconds=show["duration_ms"]),
+            duration=timedelta(milliseconds=episode["duration_ms"]),
             is_liked=False, # Spotify does not provide a way to "like" episodes in a podcast.
             is_playing=True,
             is_shuffled=playback["shuffle_state"],

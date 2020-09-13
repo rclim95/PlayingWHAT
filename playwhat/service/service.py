@@ -87,7 +87,7 @@ def _create_client() -> spotipy.Spotify:
         username=os.getenv(playwhat.ENV_USERNAME),
         scope=" ".join(playwhat.API_SCOPES)
     )
-    user_token = oauth_manager.get_access_token(as_dict=False)
+    user_token = oauth_manager.get_cached_token()
     if user_token is None:
         # The user hasn't authenticated with the Spotify API. Tell them that they must
         # authenticate in order to continue.
@@ -106,22 +106,11 @@ def _create_client() -> spotipy.Spotify:
     if oauth_manager.is_token_expired(user_token):
         LOGGER.info("The current user token has expired. Refreshing...")
 
-        # Get the cached token information and use that to refresh the user token
-        cached_token = oauth_manager.get_cached_token()
-        if cached_token is None:
-            LOGGER.warning("A cached user token could not be found. The user token won't be "
-                           "refreshed through Spotify's API.")
-            LOGGER.info(
-                "Please authenticate with the Spotify API at least once by running the "
-                "following command:\n"
-                "$ python3 -m playwhat.console auth <spotify-username>"
-            )
-            return None
-
-        oauth_manager.refresh_access_token(cached_token["refresh_token"])
+        # Refresh the user's token.
+        oauth_manager.refresh_access_token(user_token["refresh_token"])
         LOGGER.info("Successfully refreshed the current user token.")
 
-    return spotipy.Spotify(auth=user_token, oauth_manager=oauth_manager)
+    return spotipy.Spotify(auth_manager=oauth_manager)
 
 async def _handle_request(reader: StreamReader, writer: StreamWriter):
     """Handles the incoming request"""

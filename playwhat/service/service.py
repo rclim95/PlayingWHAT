@@ -215,7 +215,7 @@ async def _do_run_poller():
 
     LOGGER.info("Starting poller...")
 
-    last_song = None
+    last_item = None
     fibonacci_iter = _fibonnaci()
     while True:
         delay_sec = 60.0
@@ -233,7 +233,7 @@ async def _do_run_poller():
                 continue
 
             # Get the current playback
-            playback = api_client.current_playback()
+            playback = api_client.current_playback(additional_types="episode")
 
             # As well as information about the user that's logged into Spotify (note that we cache
             # the result so that we're not calling this endpoint every time--it's unlikely the
@@ -257,11 +257,11 @@ async def _do_run_poller():
                 remaining = \
                     timedelta(milliseconds=track["duration_ms"] - playback["progress_ms"]) - \
                     timedelta(seconds=refresh_sec)
-                LOGGER.debug("%s remaining for the current track", str(remaining))
+                LOGGER.debug("%s remaining for the current item", str(remaining))
 
-                # Is this a different song being played?
-                if track["id"] != last_song:
-                    # Yup, it's a new song. In that case, we should reset our Fibonnaci series.
+                # Is this a different item being played?
+                if track["id"] != last_item:
+                    # Yup, it's a new item. In that case, we should reset our Fibonnaci series.
                     #
                     # Note that we're using Fibonnaci to figure out when to poll again. We're
                     # operating under the assumption that the user will most likely skip within the
@@ -270,7 +270,7 @@ async def _do_run_poller():
                     # Interesting tidbits:
                     # https://musicmachinery.com/2014/05/02/the-skip/
                     fibonacci_iter = _fibonnaci()
-                    last_song = track["id"]
+                    last_item = track["id"]
 
                 # Get the next number in our Fibonnaci series
                 next_fibonnaci = next(fibonacci_iter)
@@ -322,38 +322,57 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
         LOGGER.warning("The current item is not available. Is the user in private mode?")
         return False
 
-    if current_item["type"] != "track":
-        LOGGER.warning("The current item is not a track object. Tracks are only supported.")
-        return False
+    # Are we playing a track (song)?
+    if current_item["type"] == "track":
+        # Check to see if the user likes this track. Note that if the user is playing a local track
+        # then assume the track is not liked.
+        track = playback["item"]
+        is_local = track["is_local"]
+        if is_local:
+            is_liked = False
+        else:
+            is_liked = api_client.current_user_saved_tracks_contains([track["id"]])[0]
 
-    # Check to see if the user likes this track. Note that if the user is playing a local track
-    # then assume the track is not liked.
-    track = playback["item"]
-    is_local = track["is_local"]
-    if is_local:
-        is_liked = False
-    else:
-        is_liked = api_client.current_user_saved_tracks_contains([track["id"]])[0]
-
-    # Build the PainterOptions that'll pass to the painter and display it
-    device = playback["device"]
-    album = track["album"]
-    artists = track["artists"]
-    options = PainterOptions(
-        artist_name=", ".join(map(lambda artist: artist["name"], artists)),
-        album_name=album["name"],
-        album_image_url=None if is_local else album["images"][0]["url"],
-        device_name=device["name"],
-        device_type=DeviceType.from_api(device["type"]),
-        duration=timedelta(milliseconds=track["duration_ms"]),
-        is_liked=is_liked,
-        is_playing=True,
-        is_shuffled=playback["shuffle_state"],
-        repeat_status=RepeatStatus.from_api(playback["repeat_state"]),
-        track_name=track["name"],
-        user_name=current_user["display_name"],
-        user_image_url=current_user["images"][0]["url"]
-    )
+        # Build the PainterOptions that we'll pass to the painter and display it
+        device = playback["device"]
+        album = track["album"]
+        artists = track["artists"]
+        options = PainterOptions(
+            artist_name=", ".join(map(lambda artist: artist["name"], artists)),
+            album_name=album["name"],
+            album_image_url=None if is_local else album["images"][0]["url"],
+            device_name=device["name"],
+            device_type=DeviceType.from_api(device["type"]),
+            duration=timedelta(milliseconds=track["duration_ms"]),
+            is_liked=is_liked,
+            is_playing=True,
+            is_shuffled=playback["shuffle_state"],
+            repeat_status=RepeatStatus.from_api(playback["repeat_state"]),
+            track_name=track["name"],
+            user_name=current_user["display_name"],
+            user_image_url=current_user["images"][0]["url"]
+        )
+    # Or are we playing an episode (podcast)?
+    elif current_item["type"] == "episode":
+        # Build the PainterOptions that we'll pass to the painter and display it
+        episode = playback["item"]
+        device = playback["device"]
+        show = episode["show"]
+        options = PainterOptions(
+            artist_name=show["publisher"], # The "artist" of a show is really the publisher
+            album_name=show["name"], # The "album name" of a show is really the show's name
+            album_image_url=show["images"][0]["url"],
+            device_name=device["name"],
+            device_type=DeviceType.from_api(device["type"]),
+            duration=timedelta(milliseconds=show["duration_ms"]),
+            is_liked=False, # Spotify does not provide a way to "like" episodes in a podcast.
+            is_playing=True,
+            is_shuffled=playback["shuffle_state"],
+            repeat_status=RepeatStatus.from_api(playback["repeat_state"]),
+            track_name=episode["name"],
+            user_name=current_user["display_name"],
+            user_image_url=current_user["images"][0]["url"]
+        )
 
     LOGGER.debug("Updating display (%s by %s)", options.track_name, options.album_name)
 

@@ -541,6 +541,7 @@ def _paint_recently_played_footer(
              timestamp_y + ((recent_icon_height - timestamp_height) // 2) - 2),
             recent_timestamp, font=font, fill=InkyWHAT.BLACK)
 
+
 def _get_font(text: str, size: int, light_variant: bool = False):
     # Determine if the text contains characters that would require a CJK font to render
     # it properly (so that it isn't showing mojibake)

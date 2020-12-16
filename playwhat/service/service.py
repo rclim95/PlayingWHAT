@@ -8,6 +8,7 @@ import os
 from socket import socket
 from time import time
 
+from dateutil import tz
 import spotipy
 
 import playwhat
@@ -306,7 +307,7 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
         if show_recent_tracks:
             # Fetch the list of recent tracks the user has played from the Spotify API, and then
             # show it.
-            timestamp = datetime.now()
+            timestamp = datetime.now().replace(tzinfo=tz.tzlocal())
             result = api_client.current_user_recently_played(limit=6)
             recent_items = list(map(lambda item: RecentTrack(
                 album_name=item["track"]["album"]["name"],
@@ -314,7 +315,11 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
                 track_name=item["track"]["name"],
                 # Spotify's ISO format puts a Z at the end, which datetime.fromisoformat(str) does
                 # not support. Strip it out so we can parse it.
+                #
+                # Note in addition that this timestamp is in UTC. Therefore, make sure mark the
+                # datetime as such.
                 played=datetime.fromisoformat(item["played_at"].rstrip("Z"))
+                    .replace(tzinfo=tz.tzutc())
             ), result["items"]))
 
             display_recently_played(RecentTrackOptions(

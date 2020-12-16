@@ -50,7 +50,7 @@ CONTENT_INFO_ICON_SPACING: int = 5
 CONTENT_INFO_LINE_SPACING: int = 3
 
 # The point size of the footer
-FOOTER_POINT_SIZE: int = 18
+FOOTER_POINT_SIZE: int = 16
 
 # The amount of spacing between the icon/avatar and the name
 FOOTER_ICON_NAME_SPACING: int = 5

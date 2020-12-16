@@ -2,7 +2,7 @@
 
 import typing
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import timedelta, datetime
 from enum import IntEnum
 
 # Represents a dimension in the form (int, int)
@@ -20,7 +20,7 @@ class DeviceType(IntEnum):
 
     def __str__(self) -> str:
         """Gets a human-readable string of the enum"""
-        return self.name
+        return str(self.name)
 
     @staticmethod
     def from_string(string: str):
@@ -52,9 +52,9 @@ class RepeatStatus(IntEnum):
     SINGLE = 1      # Repeat one track only.
     ALL = 2         # Repeat all songs in the playlist or album.
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Gets a human-readable string of the enum"""
-        return self.name
+        return str(self.name)
 
     @staticmethod
     def from_string(string: str):
@@ -78,6 +78,7 @@ class RepeatStatus(IntEnum):
 class PainterOptions:
     """
     Defines the available options that can be passed to the painter so it'll know what to paint
+    when showing the "Now Playing" screen
     """
     artist_name: str
     album_name: str
@@ -90,5 +91,26 @@ class PainterOptions:
     is_shuffled: bool
     repeat_status: RepeatStatus
     track_name: str
+    user_name: str
+    user_image_url: str
+
+@dataclass
+class RecentTrack:
+    """
+    Encapsulates information about a track that was recently played.
+    """
+    album_name: str
+    artist_name: str
+    track_name: str
+    played: datetime
+
+@dataclass
+class RecentTrackOptions:
+    """
+    Defines the available options that can be passed to the painter so it'll know what to paint
+    when showing the "Recently Played" screen
+    """
+    tracks: typing.Iterable[RecentTrack]
+    timestamp: datetime
     user_name: str
     user_image_url: str

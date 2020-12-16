@@ -21,6 +21,8 @@ def main():
     LOGGER.debug("SPOTIFY_CLIENT_ID = %s", os.getenv(playwhat.ENV_CLIENT_ID))
     LOGGER.debug("SPOTIFY_CLIENT_SECRET = %s", "*" * len(os.getenv(playwhat.ENV_CLIENT_SECRET)))
     LOGGER.debug("SPOTIFY_USERNAME = %s", os.getenv(playwhat.ENV_USERNAME))
+    LOGGER.debug("ROTATE_IMAGE = %s", os.getenv(playwhat.ENV_ROTATE_IMAGE))
+    LOGGER.debug("SHOW_RECENT_TRACKS = %s", os.getenv(playwhat.ENV_SHOW_RECENT_TRACKS))
 
     # Run the action the user chose
     args.func(args)

@@ -2,7 +2,7 @@
 
 import asyncio
 from asyncio import AbstractServer, Task, CancelledError, StreamReader, StreamWriter
-from datetime import timedelta
+from datetime import timedelta, datetime
 import json
 import os
 from socket import socket
@@ -13,8 +13,10 @@ import spotipy
 import playwhat
 from playwhat.painter import display, \
     display_not_playing, \
+    display_recently_played, \
     save_screenshot
-from playwhat.painter.types import PainterOptions, \
+from playwhat.painter.types import PainterOptions, RecentTrackOptions, \
+    RecentTrack, \
     RepeatStatus, \
     DeviceType
 from playwhat.service import LOGGER, PATH_UNIX_SOCKET
@@ -299,7 +301,30 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
         LOGGER.info("The user is not playing anything.")
 
         start_time = time()
-        display_not_playing()
+        # Do we want to show the list of tracks that the user has recently played?
+        show_recent_tracks = bool(os.getenv(playwhat.ENV_SHOW_RECENT_TRACKS))
+        if show_recent_tracks:
+            # Fetch the list of recent tracks the user has played from the Spotify API, and then
+            # show it.
+            timestamp = datetime.now()
+            result = api_client.current_user_recently_played(limit=6)
+            recent_items = list(map(lambda item: RecentTrack(
+                album_name=item["track"]["album"]["name"],
+                artist_name="; ".join(map(lambda artist: artist["name"], item["track"]["artists"])),
+                track_name=item["track"]["name"],
+                # Spotify's ISO format puts a Z at the end, which datetime.fromisoformat(str) does
+                # not support. Strip it out so we can parse it.
+                played=datetime.fromisoformat(item["played_at"].rstrip("Z"))
+            ), result["items"]))
+
+            display_recently_played(RecentTrackOptions(
+                tracks=recent_items,
+                timestamp=timestamp,
+                user_name=current_user["display_name"],
+                user_image_url=current_user["images"][0]["url"]
+            ))
+        else:
+            display_not_playing()
         end_time = time()
 
         refresh_sec = end_time - start_time

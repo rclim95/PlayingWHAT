@@ -69,3 +69,15 @@ NOT_PLAYING_HEADING_SPACING: int = 20
 
 # The point size of the info text under the "Nothing Playing" heading font
 NOT_PLAYING_CONTENT_POINT_SIZE: int = 20
+
+# The point size of the "table header" font for the "Recently Played" screen
+RECENTLY_PLAYED_HEADING_POINT_SIZE = 16
+
+# The amount of spacing between each "table cell" of the "Recently Played" screen
+RECENTLY_PLAYED_CELL_SPACING = 4
+
+# The amount of spacing between each "table row" of the "Recently Played" screen
+RECENTLY_PLAYED_ROW_SPACING = 6
+
+# The point size of the "table content" font for the "Recently Played" screen
+RECENTLY_PLAYED_CONTENT_POINT_SIZE = 16

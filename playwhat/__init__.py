@@ -12,7 +12,7 @@ import yaml
 LOGGER = logging.getLogger(__package__)
 
 # Define the Spotify scopes that's needed by PlayingWHAT to work
-API_SCOPES = ["user-library-read", "user-read-playback-state"]
+API_SCOPES = ["user-library-read", "user-read-playback-state", "user-read-recently-played"]
 
 # Define the available environment variables keys that should exist in the .env file
 ENV_ENV_FILE = "ENV_FILE"
@@ -23,6 +23,7 @@ ENV_REDIRECT_URL = "SPOTIFY_REDIRECT_URL"
 ENV_CREDENTIAL_CACHE_PATH = "SPOTIFY_CREDENTIAL_CACHE_PATH"
 ENV_USERNAME = "SPOTIFY_USERNAME"
 ENV_ROTATE_IMAGE = "ROTATE_IMAGE"
+ENV_SHOW_RECENT_TRACKS = "SHOW_RECENT_TRACKS"
 
 def setup_logging(verbose: bool = False, logger: logging.Logger = LOGGER):
     """

@@ -1,5 +1,6 @@
 """Provide utility functions for the `playwhat.painter` module"""
 
+from datetime import timedelta
 from hashlib import sha256
 from io import BytesIO
 import logging
@@ -114,6 +115,25 @@ def has_cjk_text(text: str):
     compatible font should be used to display the text)
     """
     return _CJK_REGEX.search(text) is not None
+
+def humanize_timedelta(delta: timedelta) -> str:
+    """
+    Returns a string that represents the `timedelta` that was passed in a more human-friendly manner
+    """
+    seconds = delta.total_seconds()
+    if seconds < 60.0:
+        return "{seconds:.0F}s ago".format(seconds=seconds)
+
+    minutes = seconds / 60.0
+    if minutes < 60.0:
+        return "{minutes:.0F}m ago".format(minutes=minutes)
+
+    hours = minutes / 60.0
+    if hours < 24.0:
+        return "{hours:.1F}h ago".format(hours=hours)
+
+    days = hours / 24.0
+    return "{days:.1F}d ago".format(days=days)
 
 def resize_and_quantize_to_what_display(image: Image.Image,
                                         resize_dimension: Dimension = None) -> Image.Image:

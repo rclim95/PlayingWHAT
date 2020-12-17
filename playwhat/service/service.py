@@ -303,12 +303,13 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
 
         start_time = time()
         # Do we want to show the list of tracks that the user has recently played?
-        show_recent_tracks = bool(os.getenv(playwhat.ENV_SHOW_RECENT_TRACKS))
+        max_recent_tracks = int(os.getenv(playwhat.ENV_SHOW_RECENT_TRACKS))
+        show_recent_tracks =  max_recent_tracks > 0
         if show_recent_tracks:
             # Fetch the list of recent tracks the user has played from the Spotify API, and then
             # show it.
             timestamp = datetime.now().replace(tzinfo=tz.tzlocal())
-            result = api_client.current_user_recently_played(limit=6)
+            result = api_client.current_user_recently_played(limit=max_recent_tracks)
             recent_items = list(map(lambda item: RecentTrack(
                 album_name=item["track"]["album"]["name"],
                 artist_name="; ".join(map(lambda artist: artist["name"], item["track"]["artists"])),

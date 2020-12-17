@@ -213,7 +213,7 @@ def _paint_content(image: Image.Image, draw: ImageDraw.ImageDraw, options: Paint
     # to center it on the screen of the InkyWHAT.
     content_y = None
     if CONTENT_START_Y is None:
-        content_y = (image.height - CONTENT_ALBUM_DIMENSIONS[1] - (PADDING * 2)) // 2
+        content_y = (image.height - CONTENT_ALBUM_DIMENSIONS[1]) // 2
     else:
         content_y = CONTENT_START_Y
 

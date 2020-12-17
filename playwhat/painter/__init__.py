@@ -14,7 +14,7 @@ import playwhat.painter.paint as p
 LOGGER = logging.getLogger(__package__)
 
 _current_options: PainterOptions = None
-_current_recent_tracks: List[RecentTrack] = None
+_current_recent_tracks: RecentTrackOptions = None
 
 def display(options: PainterOptions, force=False) -> Image.Image:
     """
@@ -74,8 +74,12 @@ def display_recently_played(options: RecentTrackOptions, force=False) -> Image.I
     """
     global _current_options, _current_recent_tracks # pylint: disable=invalid-name,global-statement
 
-    # Because it takes a long time to update the InkyWHAT, only update it _if_ we really have to
-    if not force and _current_recent_tracks == options.tracks:
+    # Because it takes a long time to update the InkyWHAT, only update it _if_ we really have to.
+    # Note that we're not going to be comparing _current_recent_tracks and options--instead, we're
+    # going to compare the track list (since that's where the "interesting" differences lie).
+    if not force and \
+       _current_recent_tracks is not None and \
+       _current_recent_tracks.tracks == options.tracks:
         LOGGER.warning("The list of recent tracks appear to be same on screen, ignoring...")
         return
 
@@ -84,7 +88,7 @@ def display_recently_played(options: RecentTrackOptions, force=False) -> Image.I
 
     # Store the list of recent tracks that we got (don't store the options, because we don't care
     # about the "timestamp" property--only whether the list of recent tracks have changed)
-    _current_recent_tracks = options.tracks
+    _current_recent_tracks = options
 
     image_rotate_degrees = os.getenv(playwhat.ENV_ROTATE_IMAGE, "180")
     image = p.paint_recently_played(options)
@@ -97,11 +101,15 @@ def display_recently_played(options: RecentTrackOptions, force=False) -> Image.I
 
 def save_screenshot(output_path: str, uid: int):
     """
-    Saves the screenshot of the InkyWHAT display to the speciifed `output_path`
+    Saves the screenshot of the InkyWHAT display to the specified `output_path`
     """
     try:
         if _current_options is None:
-            screen = p.paint_not_playing()
+            # Are we supposed to print the "Recently Played" list?
+            if _current_recent_tracks is None:
+                screen = p.paint_not_playing()
+            else:
+                screen = p.paint_recently_played(_current_recent_tracks)
         else:
             screen = p.paint(_current_options)
 

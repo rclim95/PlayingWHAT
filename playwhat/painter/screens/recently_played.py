@@ -61,17 +61,13 @@ def _paint_list(image: Image.Image, draw: ImageDraw.ImageDraw, options: RecentTr
     else:
         content_y = CONTENT_START_Y
 
-    # Measure out our header. The first column (track name) should take up 1/2 of the screen.
-    # The second column (artist) should take up 1/4 of the screen's width. Finally, the last column
-    # (played) should take up 1/4 of the screen's width
+    # Measure out our header. The first column (track name) should take up three-fifths of the screen.
+    # The second column (artist) should take up two-fifths of the screen's width.
     track_name_column_x = PADDING
-    track_name_column_width = (image.width - (PADDING * 2)) * (1 / 2)
+    track_name_column_width = (image.width - (PADDING * 2)) * (3 / 5)
     artist_name_column_x = track_name_column_x + track_name_column_width + \
         RECENTLY_PLAYED_CELL_SPACING
-    artist_name_column_width = (image.width - (PADDING * 2)) * (1 / 4)
-    played_column_x = artist_name_column_x + artist_name_column_width + \
-        RECENTLY_PLAYED_CELL_SPACING
-    played_column_width = (image.width - (PADDING * 2)) * (1 / 4)
+    artist_name_column_width = (image.width - (PADDING * 2)) * (2 / 5)
 
     # Get the header font that we want to use to draw our table headers
     header_font = ImageFont.truetype(
@@ -87,7 +83,6 @@ def _paint_list(image: Image.Image, draw: ImageDraw.ImageDraw, options: RecentTr
     # Draw out our header (using the above measurements to figure out *where* to place the header)
     draw.text((track_name_column_x, content_y), text="Track", fill=InkyWHAT.RED, font=header_font)
     draw.text((artist_name_column_x, content_y), text="Artist", fill=InkyWHAT.RED, font=header_font)
-    draw.text((played_column_x, content_y), text="Played", fill=InkyWHAT.RED, font=header_font)
     draw.line(((PADDING, header_line_y), (image.width - PADDING, header_line_y)),
         fill=InkyWHAT.RED,
         width=1)
@@ -128,16 +123,6 @@ def _paint_list(image: Image.Image, draw: ImageDraw.ImageDraw, options: RecentTr
             text=artist_name,
             fill=InkyWHAT.BLACK,
             font=content_font)
-
-        # Finally, draw how long ago it was played.
-        played_ago = utils.ellipsize_text(
-            utils.humanize_timedelta(options.timestamp - track.played),
-            font=played_ago_font,
-            max_width=played_column_width)
-        draw.text((played_column_x, line_y),
-            text=played_ago,
-            fill=InkyWHAT.BLACK,
-            font=played_ago_font)
 
         # Adjust line_y for the next line
         line_y += RECENTLY_PLAYED_CONTENT_POINT_SIZE + RECENTLY_PLAYED_ROW_SPACING

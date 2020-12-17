@@ -9,7 +9,7 @@ from playwhat.painter.types import PainterOptions, RecentTrackOptions, \
     RecentTrack, \
     DeviceType, \
     RepeatStatus
-import playwhat.painter.paint as p
+import playwhat.painter.screens as s
 
 LOGGER = logging.getLogger(__package__)
 
@@ -34,7 +34,7 @@ def display(options: PainterOptions, force=False) -> Image.Image:
     _current_recent_tracks = None
 
     image_rotate_degrees = os.getenv(playwhat.ENV_ROTATE_IMAGE, "180")
-    image = p.paint(options)
+    image = s.now_playing.create(options)
     image = image.rotate(int(image_rotate_degrees))
 
     inky_display = InkyWHAT("red")
@@ -60,7 +60,7 @@ def display_not_playing(force=False) -> Image.Image:
     _current_recent_tracks = None
 
     image_rotate_degrees = os.getenv(playwhat.ENV_ROTATE_IMAGE, "180")
-    image = p.paint_not_playing()
+    image = s.not_playing.create()
     image = image.rotate(int(image_rotate_degrees))
 
     inky_display = InkyWHAT("red")
@@ -91,7 +91,7 @@ def display_recently_played(options: RecentTrackOptions, force=False) -> Image.I
     _current_recent_tracks = options
 
     image_rotate_degrees = os.getenv(playwhat.ENV_ROTATE_IMAGE, "180")
-    image = p.paint_recently_played(options)
+    image = s.recently_played.create(options)
     image = image.rotate(int(image_rotate_degrees))
 
     inky_display = InkyWHAT("red")
@@ -105,13 +105,13 @@ def save_screenshot(output_path: str, uid: int):
     """
     try:
         if _current_options is None:
-            # Are we supposed to print the "Recently Played" list?
+            # Are we supposed to paint the "Recently Played" list?
             if _current_recent_tracks is None:
-                screen = p.paint_not_playing()
+                screen = s.not_playing.create()
             else:
-                screen = p.paint_recently_played(_current_recent_tracks)
+                screen = s.recently_played.create(_current_recent_tracks)
         else:
-            screen = p.paint(_current_options)
+            screen = s.now_playing.create(_current_options)
 
         screen.save(output_path, format="PNG")
 

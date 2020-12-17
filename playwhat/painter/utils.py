@@ -6,9 +6,12 @@ from io import BytesIO
 import logging
 import os
 import re
+
+from inky import InkyWHAT
 from PIL import Image, ImageFont
+
 import requests
-from playwhat.painter.constants import PATH_IMAGE_CACHE
+from playwhat.painter.constants import PATH_IMAGE_CACHE, PATH_ASSET_FONT
 from playwhat.painter.types import Dimension
 
 # The logger for this module
@@ -78,6 +81,18 @@ class ImageCacheLibrary:
         # saved it already)
         return sha256(url.encode("utf-8")).hexdigest()
 
+def create_image() -> Image.Image:
+    """Creates a new, pallete-based `Image.Image` that can be placed on the Inky wHAT screen"""
+    image = Image.new("P", (InkyWHAT.WIDTH, InkyWHAT.HEIGHT))
+    image.putpalette((
+        *(255, 255, 255),           # White
+        *(0, 0, 0),                 # Black
+        *(255, 0, 0),               # Red
+        *((0, 0, 0) * 253)          # Remainder
+    ))
+
+    return image
+
 def ellipsize_text(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
     """
     Ellipsize the text if needed, accomodating for the `max_width` speciifed
@@ -98,6 +113,26 @@ def ellipsize_text(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
 
         # All right, seems like we've reached our limit.
         return text[:chars_end - 1] + "..."
+
+def get_font(text: str, size: int, light_variant: bool = False):
+    """Gets the font to use depending on the provided text.
+
+    If `text` contains Chinese, Japanese, or Korean characters, then a CJK font will be returned.
+    Otherwise, the standard font will be used."""
+    # Determine if the text contains characters that would require a CJK font to render
+    # it properly (so that it isn't showing mojibake)
+    if has_cjk_text(text):
+        if light_variant:
+            font_path = os.path.join(PATH_ASSET_FONT, "noto-sans-cjkjp-light.otf")
+        else:
+            font_path = os.path.join(PATH_ASSET_FONT, "noto-sans-cjkjp.otf")
+    else:
+        if light_variant:
+            font_path = os.path.join(PATH_ASSET_FONT, "open-sans-light.ttf")
+        else:
+            font_path = os.path.join(PATH_ASSET_FONT, "open-sans.ttf")
+
+    return ImageFont.truetype(font_path, size)
 
 def get_image(url: str, resize_dimension: Dimension = None) -> Image.Image:
     """

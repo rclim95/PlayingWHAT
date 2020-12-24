@@ -61,8 +61,8 @@ def _paint_list(image: Image.Image, draw: ImageDraw.ImageDraw, options: RecentTr
     else:
         content_y = CONTENT_START_Y
 
-    # Measure out our header. The first column (track name) should take up three-fifths of the screen.
-    # The second column (artist) should take up two-fifths of the screen's width.
+    # Measure out our header. The first column (track name) should take up three-fifths of the
+    # screen. The second column (artist) should take up two-fifths of the screen's width.
     track_name_column_x = PADDING
     track_name_column_width = (image.width - (PADDING * 2)) * (3 / 5)
     artist_name_column_x = track_name_column_x + track_name_column_width + \

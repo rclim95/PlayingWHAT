@@ -1,11 +1,5 @@
 # PlayingWHAT
 
-<p align="center">
-    <img src="docs/assets/preview-1.png" alt="Preview 1" width="200" />
-    <img src="docs/assets/preview-2.png" alt="Preview 2" width="200" />
-    <img src="docs/assets/preview-3.png" alt="Preview 3" width="200" />
-</p>
-
 PlayingWHAT is a little Python app that I've created that allows you to sign in to your Spotify account to show what's playing on the [Inky wHAT](https://shop.pimoroni.com/products/inky-what) e-paper display connected to a Raspberry PI. It'll create an image on-the-fly that is uploaded to
 the Inky wHAT display (thanks to the [official Inky Python library](https://github.com/pimoroni/inky)), showing the following information:
 
@@ -19,6 +13,15 @@ the Inky wHAT display (thanks to the [official Inky Python library](https://gith
 * The duration of the track
 * The Spotify account that PlayingWHAT is showing playback for
 * The device that's currently streaming music from Spotify
+
+## Screenshots
+
+<p align="center">
+    <img src="docs/assets/preview-1.png" alt="Preview 1" width="200" />
+    <img src="docs/assets/preview-2.png" alt="Preview 2" width="200" />
+    <img src="docs/assets/preview-3.png" alt="Preview 3" width="200" />
+    <img src="docs/assets/preview-4.png" alt="Preview 4" width="200" />
+</p>
 
 ## License
 

@@ -3,6 +3,7 @@
 import asyncio
 from asyncio import AbstractServer, Task, CancelledError, StreamReader, StreamWriter
 from datetime import timedelta, datetime
+from itertools import groupby
 import json
 import os
 from socket import socket
@@ -302,29 +303,55 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
         LOGGER.info("The user is not playing anything.")
 
         start_time = time()
+
         # Do we want to show the list of tracks that the user has recently played?
         max_recent_tracks = int(os.getenv(playwhat.ENV_SHOW_RECENT_TRACKS))
         show_recent_tracks =  max_recent_tracks > 0
         if show_recent_tracks:
-            # Fetch the list of recent tracks the user has played from the Spotify API, and then
-            # show it.
+            # Fetch the list of recent tracks the user has played from the Spotify API. Note that
+            # because the Spotify API will show tracks that were on repeat multiple times, let's
+            # collapse them using the groupby function.
             timestamp = datetime.now().replace(tzinfo=tz.tzlocal())
-            result = api_client.current_user_recently_played(limit=max_recent_tracks)
-            recent_items = list(map(lambda item: RecentTrack(
-                album_name=item["track"]["album"]["name"],
-                artist_name="; ".join(map(lambda artist: artist["name"], item["track"]["artists"])),
-                track_name=item["track"]["name"],
-                # Spotify's ISO format puts a Z at the end, which datetime.fromisoformat(str) does
-                # not support. Strip it out so we can parse it.
-                #
-                # Note in addition that this timestamp is in UTC. Therefore, make sure mark the
-                # datetime as such.
-                played=datetime.fromisoformat(item["played_at"].rstrip("Z"))
-                    .replace(tzinfo=tz.tzutc())
-            ), result["items"]))
+            result = api_client.current_user_recently_played()
+            recent_items_grouped = [
+                list(tracks) for track_uri, tracks in groupby(
+                    result["items"],
+                    lambda item: item["track"]["uri"])
+            ]
+
+            recent_tracks = []
+            for recent_items in recent_items_grouped:   # This contains the grouped recent items
+                # We really only care about the first item in recent_items (because all of them
+                # should really have the same track information)
+                item = recent_items[0]
+
+                # For the track name, if this song was played multiple time consecutively,
+                # append the number of times it was played consecutively with the track name.
+                count = len(recent_items)
+                if count > 0:
+                    track_name = "{name} (× {count})".format(
+                        name=item["track"]["name"],
+                        count=count)
+                else:
+                    track_name = item["track"]["name"]
+
+                recent_tracks.append(RecentTrack(
+                    album_name=item["track"]["album"]["name"],
+                    artist_name="; ".join(map(
+                        lambda artist: artist["name"], item["track"]["artists"])
+                    ),
+                    track_name=track_name,
+                    # Spotify's ISO format puts a Z at the end, which datetime.fromisoformat(str)
+                    # does not support. Strip it out so we can parse it.
+                    #
+                    # Note in addition that this timestamp is in UTC. Therefore, make sure mark the
+                    # datetime as such.
+                    played=datetime.fromisoformat(item["played_at"].rstrip("Z"))
+                        .replace(tzinfo=tz.tzutc())
+                ))
 
             display_recently_played(RecentTrackOptions(
-                tracks=recent_items,
+                tracks=recent_tracks[:max_recent_tracks],
                 timestamp=timestamp,
                 user_name=current_user["display_name"],
                 user_image_url=current_user["images"][0]["url"]

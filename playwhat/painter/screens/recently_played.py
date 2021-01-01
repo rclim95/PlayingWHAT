@@ -101,11 +101,29 @@ def _paint_list(image: Image.Image, draw: ImageDraw.ImageDraw, options: RecentTr
             text=track.track_name,
             size=RECENTLY_PLAYED_CONTENT_POINT_SIZE)
 
+        # Figure out how much space to allocate to the track's name. It'll either be
+        # the entire column width (if this track was played once) or a part of it (if this track
+        # was played multiple time consecutively)
+        if track.times_played > 1:
+            # This track got played multiple time. Figure out how much space to allocate for
+            # writing the (× <Times Played>) part of the title.
+            times_played = "(× {count})".format(count=track.times_played)
+            times_played_width, times_played_height = content_font.getsize(times_played)
+            track_name_max_width = track_name_column_width - times_played_width
+
+            # Draw the times_played part at the very end of the "Track" column
+            draw.text((PADDING + track_name_column_width - times_played_width, line_y),
+                text=times_played,
+                fill=InkyWHAT.RED,
+                font=content_font)
+        else:
+            track_name_max_width = track_name_column_width
+
         # Draw the track's name first
         track_name = utils.ellipsize_text(
             track.track_name,
             font=content_font,
-            max_width=track_name_column_width)
+            max_width=track_name_max_width)
         draw.text((PADDING, line_y),
             text=track_name,
             fill=InkyWHAT.BLACK,

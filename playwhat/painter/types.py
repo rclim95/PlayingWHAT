@@ -103,6 +103,7 @@ class RecentTrack:
     artist_name: str
     track_name: str
     played: datetime
+    times_played: int
 
 @dataclass
 class RecentTrackOptions:

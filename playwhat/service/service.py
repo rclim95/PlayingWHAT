@@ -324,30 +324,20 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
                 # We really only care about the first item in recent_items (because all of them
                 # should really have the same track information)
                 item = recent_items[0]
-
-                # For the track name, if this song was played multiple time consecutively,
-                # append the number of times it was played consecutively with the track name.
-                count = len(recent_items)
-                if count > 0:
-                    track_name = "{name} (× {count})".format(
-                        name=item["track"]["name"],
-                        count=count)
-                else:
-                    track_name = item["track"]["name"]
-
                 recent_tracks.append(RecentTrack(
                     album_name=item["track"]["album"]["name"],
                     artist_name="; ".join(map(
                         lambda artist: artist["name"], item["track"]["artists"])
                     ),
-                    track_name=track_name,
+                    track_name=item["track"]["name"],
                     # Spotify's ISO format puts a Z at the end, which datetime.fromisoformat(str)
                     # does not support. Strip it out so we can parse it.
                     #
                     # Note in addition that this timestamp is in UTC. Therefore, make sure mark the
                     # datetime as such.
                     played=datetime.fromisoformat(item["played_at"].rstrip("Z"))
-                        .replace(tzinfo=tz.tzutc())
+                        .replace(tzinfo=tz.tzutc()),
+                    times_played=len(recent_items)
                 ))
 
             display_recently_played(RecentTrackOptions(

@@ -173,6 +173,13 @@ def _handle_refresh_message():
 
     # Let's update!
     _update_display(api_client, _user, playback)
+
+    # Be sure to delete api_client so that we free up any resources. This should fix the
+    # issue where we get "Too many open files" error when PlayWHAT is running for a long
+    # time.
+    if api_client is not None:
+        del api_client
+
     return True
 
 async def _on_client_connected(reader: StreamReader, writer: StreamWriter):
@@ -212,6 +219,7 @@ async def _do_run_poller():
     fibonacci_iter = _fibonnaci()
     while True:
         delay_sec = 60.0
+        api_client = None
         try:
             LOGGER.info("Updating InkyWHAT with latest playback status from Spotify")
 
@@ -282,6 +290,12 @@ async def _do_run_poller():
         except Exception: # pylint: disable=broad-except
             LOGGER.exception("Failed to update InkyWHAT with latest playback info from Spotify")
         finally:
+            # Be sure to delete api_client so that we free up any resources. This should fix the
+            # issue where we get "Too many open files" error when PlayWHAT is running for a long
+            # time.
+            if api_client is not None:
+                del api_client
+
             # Ensure that delay_sec is a number > 0, so that we're not polling again immediately.
             delay_sec = max(delay_sec, 1)
 

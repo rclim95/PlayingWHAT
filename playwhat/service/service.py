@@ -3,7 +3,6 @@
 import asyncio
 from asyncio import AbstractServer, Task, CancelledError, StreamReader, StreamWriter
 from datetime import timedelta, datetime
-from itertools import groupby
 import json
 import os
 from socket import socket
@@ -322,41 +321,76 @@ def _update_display(api_client: spotipy.Spotify, current_user, playback):
         max_recent_tracks = int(os.getenv(playwhat.ENV_SHOW_RECENT_TRACKS))
         show_recent_tracks =  max_recent_tracks > 0
         if show_recent_tracks:
-            # Fetch the list of recent tracks the user has played from the Spotify API. Note that
-            # because the Spotify API will show tracks that were on repeat multiple times, let's
-            # collapse them using the groupby function.
-            timestamp = datetime.now().replace(tzinfo=tz.tzlocal())
-            result = api_client.current_user_recently_played()
-            recent_items_grouped = [
-                list(tracks) for track_uri, tracks in groupby(
-                    result["items"],
-                    lambda item: item["track"]["uri"])
-            ]
-
             recent_tracks = []
-            for recent_items in recent_items_grouped:   # This contains the grouped recent items
-                # We really only care about the first item in recent_items (because all of them
-                # should really have the same track information)
-                item = recent_items[0]
-                recent_tracks.append(RecentTrack(
-                    album_name=item["track"]["album"]["name"],
-                    artist_name="; ".join(map(
-                        lambda artist: artist["name"], item["track"]["artists"])
-                    ),
-                    track_name=item["track"]["name"],
-                    # Spotify's ISO format puts a Z at the end, which datetime.fromisoformat(str)
-                    # does not support. Strip it out so we can parse it.
-                    #
-                    # Note in addition that this timestamp is in UTC. Therefore, make sure mark the
-                    # datetime as such.
-                    played=datetime.fromisoformat(item["played_at"].rstrip("Z"))
-                        .replace(tzinfo=tz.tzutc()),
-                    times_played=len(recent_items)
-                ))
+
+            # Fetch the list of recently-played tracks the user has played on their Spotify,
+            # if there are any recently-played tracks.
+            result = api_client.current_user_recently_played()
+            if len(result["items"]) > 0:
+                # We're going to keep looping until we've reached the requested max_recent_tracks
+                # that the user wants to show, paging through the results as needed until we've
+                # reached our max OR there's no more results available.
+                current_track = result["items"][0]["track"]["uri"]
+                current_track_count = 0
+                while True:
+                    # Go through each track in our results
+                    for index, item in enumerate(result["items"]):
+                        if current_track != item["track"]["uri"]:
+                            # This track we're processing is different from the current_track, so
+                            # we've finished collapsing current_track. Look at the previous track
+                            # to see the track we've finished collapsing, and add it to
+                            # recent_tracks.
+                            previous_track = result["items"][index - 1]
+
+                            # Spotify's ISO format puts a Z at the end, which
+                            # datetime.fromisoformat(str) does not support. Strip it out so we
+                            # can parse it.
+                            #
+                            # Note in addition that this timestamp is in UTC. Therefore, make
+                            # sure mark the datetime as such.
+                            played = datetime \
+                                        .fromisoformat(previous_track["played_at"].rstrip("Z")) \
+                                        .replace(tzinfo=tz.tzutc())
+
+                            recent_tracks.append(RecentTrack(
+                                album_name=previous_track["track"]["album"]["name"],
+                                artist_name="; ".join(map(
+                                    lambda artist: artist["name"],
+                                    previous_track["track"]["artists"])
+                                ),
+                                track_name=previous_track["track"]["name"],
+                                played=played,
+                                times_played=current_track_count
+                            ))
+
+                            # Have we filled up recent_tracks to our max, or do we need more?
+                            if len(recent_tracks) < max_recent_tracks:
+                                # We're now ready to collapse this track (in case the next track we
+                                # process in our for loop is this same track, i.e., the user has put
+                                # this music on repeat).
+                                current_track = item["track"]["uri"]
+                                current_track_count = 1
+                            else:
+                                # We're done.
+                                break
+                        else:
+                            # It's the same track as before, increment the play count for
+                            # this track.
+                            current_track_count += 1
+
+                    # Do we need to go to the next page so that we reach max_recent_tracks?
+                    if len(recent_tracks) < max_recent_tracks:
+                        result = api_client.next(result)
+                        if result is None:
+                            # There's no more results to go through, so we're done.
+                            break
+                    else:
+                        # We've reached our maximum, so we're done.
+                        break
 
             display_recently_played(RecentTrackOptions(
-                tracks=recent_tracks[:max_recent_tracks],
-                timestamp=timestamp,
+                tracks=recent_tracks,
+                timestamp=datetime.now().replace(tzinfo=tz.tzlocal()),
                 user_name=current_user["display_name"],
                 user_image_url=current_user["images"][0]["url"]
             ))

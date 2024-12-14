@@ -1,0 +1,12 @@
+{
+    "folders": [
+        {
+            "name": "PlayingWHAT",
+            "path": "src/server"
+        },
+        {
+            "name": "PlayingWHAT.Client",
+            "path": "src/client"
+        }
+    ]
+}
